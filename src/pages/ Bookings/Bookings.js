@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { BookingForm, BookingList } from "../../components";
+import BookingForm from "../../components/BookingForm/BookingForm";
+import BookingList from "../../components/BookingList/BookingList";
 import "./Bookings.css";
 
 const Bookings = () => {
