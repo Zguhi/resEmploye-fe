@@ -1,12 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./CustomerForm.css";
 
-const CustomerForm = ({ onAddCustomer }) => {
+const CustomerForm = ({ onAddCustomer, initialData = {} }) => {
     const [formData, setFormData] = useState({
         name: "",
         email: "",
         phone: "",
     });
+
+    // Cập nhật form khi initialData thay đổi
+    useEffect(() => {
+        setFormData({
+            name: initialData.name || "",
+            email: initialData.email || "",
+            phone: initialData.phone || "",
+        });
+    }, [initialData]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -14,7 +23,15 @@ const CustomerForm = ({ onAddCustomer }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onAddCustomer(formData);
+
+        // Nếu initialData có id, nghĩa là đang ở chế độ chỉnh sửa
+        const submissionData = initialData.id
+            ? { ...formData, id: initialData.id }
+            : formData;
+
+        onAddCustomer(submissionData);
+
+        // Reset form sau khi submit
         setFormData({
             name: "",
             email: "",
@@ -48,7 +65,9 @@ const CustomerForm = ({ onAddCustomer }) => {
                 onChange={handleChange}
                 required
             />
-            <button type="submit">Add Customer</button>
+            <button type="submit">
+                {initialData.id ? "Update Customer" : "Add Customer"}
+            </button>
         </form>
     );
 };

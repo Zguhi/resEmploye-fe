@@ -5,6 +5,7 @@ import "./Dashboard.css";
 
 const Dashboard = () => {
     const [customers, setCustomers] = useState([]);
+    const [editingCustomer, setEditingCustomer] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -15,7 +16,8 @@ const Dashboard = () => {
 
     const fetchCustomers = async () => {
         try {
-            const response = await fetch("API_URL_HERE");
+            // Thay thế "API_URL_HERE" bằng URL thực tế của API
+            const response = await fetch("");
             const data = await response.json();
             setCustomers(data);
         } catch (error) {
@@ -23,15 +25,53 @@ const Dashboard = () => {
         }
     };
 
-    // ... rest of the code ...
+    // Hàm thêm khách hàng mới
+    const handleAddCustomer = (newCustomer) => {
+        const customerWithId = {
+            ...newCustomer,
+            id: customers.length > 0
+                ? Math.max(...customers.map(c => c.id)) + 1
+                : 1
+        };
+        setCustomers([...customers, customerWithId]);
+    };
+
+    // Hàm cập nhật thông tin khách hàng
+    const handleUpdateCustomer = (updatedCustomer) => {
+        setCustomers(customers.map(customer =>
+            customer.id === updatedCustomer.id ? updatedCustomer : customer
+        ));
+        setEditingCustomer(null);
+    };
+
+    // Hàm xóa khách hàng
+    const handleDeleteCustomer = (customerId) => {
+        setCustomers(customers.filter(customer => customer.id !== customerId));
+    };
+
+    // Hàm bắt đầu chỉnh sửa khách hàng
+    const startEditCustomer = (customer) => {
+        setEditingCustomer(customer);
+    };
 
     return (
         <div className="app__dashboard">
             <h1>Customer Management</h1>
-            <CustomerForm onAddCustomer={handleAddCustomer} />
+            <CustomerForm
+                key={editingCustomer ? editingCustomer.id : 'add'}
+                onAddCustomer={editingCustomer
+                    ? handleUpdateCustomer
+                    : handleAddCustomer
+                }
+                initialData={editingCustomer || {
+                    name: '',
+                    email: '',
+                    phone: ''
+                }}
+            />
             <CustomerList
                 customers={customers}
-                onUpdateCustomer={handleUpdateCustomer}
+                onUpdateCustomer={startEditCustomer}
                 onDeleteCustomer={handleDeleteCustomer}
             />
         </div>
