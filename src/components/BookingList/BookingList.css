@@ -1,0 +1,30 @@
+.app__booking-list {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.app__booking-list th,
+.app__booking-list td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--color-grey);
+}
+
+.app__booking-list th {
+    color: var(--color-golden);
+}
+
+.app__booking-list button {
+    padding: 0.25rem 0.5rem;
+    margin-right: 0.5rem;
+    background-color: var(--color-golden);
+    color: var(--color-black);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.app__booking-list button:hover {
+    background-color: var(--color-crimson);
+}

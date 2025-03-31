@@ -1,0 +1,33 @@
+.app__navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--color-black);
+    padding: 1rem 2rem;
+    color: var(--color-white);
+}
+
+.app__navbar-logo h1 {
+    color: var(--color-golden);
+    font-family: "Cormorant Upright", serif;
+    font-size: 1.5rem;
+}
+
+.app__navbar-links {
+    list-style: none;
+    display: flex;
+}
+
+.app__navbar-links li {
+    margin-left: 1.5rem;
+}
+
+.app__navbar-links a {
+    color: var(--color-grey);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.app__navbar-links a:hover {
+    color: var(--color-golden);
+}

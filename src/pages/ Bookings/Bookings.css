@@ -1,0 +1,10 @@
+.app__bookings {
+    padding: 2rem;
+}
+
+.app__bookings h1 {
+    font-family: "Cormorant Upright", serif;
+    font-size: 2rem;
+    color: var(--color-golden);
+    margin-bottom: 2rem;
+}
