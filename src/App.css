@@ -10,5 +10,6 @@
 .app {
   background-color: var(--color-black);
   color: var(--color-white);
-  font-family: "Open Sans", sans-serif;
+  min-height: 100vh; /* Đảm bảo nội dung hiển thị đầy đủ */
+  padding: 20px;
 }

@@ -17,7 +17,7 @@ const Dashboard = () => {
     const fetchCustomers = async () => {
         try {
             // Thay thế "API_URL_HERE" bằng URL thực tế của API
-            const response = await fetch("");
+            const response = await fetch("http://localhost:3000/");
             const data = await response.json();
             setCustomers(data);
         } catch (error) {
