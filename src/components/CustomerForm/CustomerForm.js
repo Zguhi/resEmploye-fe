@@ -1,13 +1,11 @@
 import React, { useState } from "react";
-import "./BookingForm.css";
+import "./CustomerForm.css";
 
-const BookingForm = ({ onAddBooking }) => {
+const CustomerForm = ({ onAddCustomer }) => {
     const [formData, setFormData] = useState({
         name: "",
         email: "",
-        date: "",
-        time: "",
-        guests: "",
+        phone: "",
     });
 
     const handleChange = (e) => {
@@ -16,18 +14,16 @@ const BookingForm = ({ onAddBooking }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onAddBooking({ ...formData, id: Date.now() });
+        onAddCustomer(formData);
         setFormData({
             name: "",
             email: "",
-            date: "",
-            time: "",
-            guests: "",
+            phone: "",
         });
     };
 
     return (
-        <form className="app__booking-form" onSubmit={handleSubmit}>
+        <form className="app__customer-form" onSubmit={handleSubmit}>
             <input
                 type="text"
                 name="name"
@@ -45,30 +41,16 @@ const BookingForm = ({ onAddBooking }) => {
                 required
             />
             <input
-                type="date"
-                name="date"
-                value={formData.date}
+                type="tel"
+                name="phone"
+                placeholder="Phone"
+                value={formData.phone}
                 onChange={handleChange}
                 required
             />
-            <input
-                type="time"
-                name="time"
-                value={formData.time}
-                onChange={handleChange}
-                required
-            />
-            <input
-                type="number"
-                name="guests"
-                placeholder="Number of Guests"
-                value={formData.guests}
-                onChange={handleChange}
-                required
-            />
-            <button type="submit">Book Now</button>
+            <button type="submit">Add Customer</button>
         </form>
     );
 };
 
-export default BookingForm;
+export default CustomerForm;

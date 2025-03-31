@@ -1,11 +1,11 @@
-.app__booking-form {
+.app__customer-form {
     display: flex;
     flex-direction: column;
     max-width: 400px;
     margin-bottom: 2rem;
 }
 
-.app__booking-form input {
+.app__customer-form input {
     padding: 0.5rem;
     margin-bottom: 1rem;
     border: 1px solid var(--color-grey);
@@ -14,7 +14,7 @@
     color: var(--color-white);
 }
 
-.app__booking-form button {
+.app__customer-form button {
     padding: 0.5rem;
     background-color: var(--color-golden);
     color: var(--color-black);
@@ -24,6 +24,6 @@
     transition: background-color 0.3s ease;
 }
 
-.app__booking-form button:hover {
+.app__customer-form button:hover {
     background-color: var(--color-crimson);
 }

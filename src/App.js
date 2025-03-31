@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar/Navbar";
-import Bookings from "./pages/ Bookings/Bookings";
+import Dashboard from "./pages/Dashboard/Dashboard";
 import "./App.css";
 
 const App = () => (
@@ -9,7 +9,7 @@ const App = () => (
         <div>
             <Navbar />
             <Routes>
-                <Route exact path="/" element={<Bookings />} />
+                <Route exact path="/" component={Dashboard} />
             </Routes>
         </div>
     </Router>

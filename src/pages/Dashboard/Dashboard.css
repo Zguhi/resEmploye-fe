@@ -1,8 +1,8 @@
-.app__bookings {
+.app__dashboard {
     padding: 2rem;
 }
 
-.app__bookings h1 {
+.app__dashboard h1 {
     font-family: "Cormorant Upright", serif;
     font-size: 2rem;
     color: var(--color-golden);
