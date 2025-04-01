@@ -1,79 +1,77 @@
 import React, { useState, useEffect } from "react";
-import CustomerForm from "../../components/CustomerForm/CustomerForm";
-import CustomerList from "../../components/CustomerList/CustomerList";
+import BookingList from "../../components/BookingList/BookingList";
+import TableStatus from "../../components/TableStatus/TableStatus";
 import "./Dashboard.css";
 
 const Dashboard = () => {
-    const [customers, setCustomers] = useState([]);
-    const [editingCustomer, setEditingCustomer] = useState(null);
+    const [bookings, setBookings] = useState([]);
+    const [tables, setTables] = useState([]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            await fetchCustomers();
-        };
-        fetchData();
+        fetchBookings();
+        fetchTables();
     }, []);
 
-    const fetchCustomers = async () => {
+    const fetchBookings = async () => {
         try {
-            // Thay thế "API_URL_HERE" bằng URL thực tế của API
-            const response = await fetch("http://localhost:3000/");
+            const response = await fetch("API_URL_HERE/bookings");
             const data = await response.json();
-            setCustomers(data);
+            setBookings(data);
         } catch (error) {
-            console.error("Error fetching customers:", error);
+            console.error("Error fetching bookings:", error);
         }
     };
 
-    // Hàm thêm khách hàng mới
-    const handleAddCustomer = (newCustomer) => {
-        const customerWithId = {
-            ...newCustomer,
-            id: customers.length > 0
-                ? Math.max(...customers.map(c => c.id)) + 1
-                : 1
-        };
-        setCustomers([...customers, customerWithId]);
+    const fetchTables = async () => {
+        try {
+            const response = await fetch("API_URL_HERE/tables");
+            const data = await response.json();
+            setTables(data);
+        } catch (error) {
+            console.error("Error fetching tables:", error);
+        }
     };
 
-    // Hàm cập nhật thông tin khách hàng
-    const handleUpdateCustomer = (updatedCustomer) => {
-        setCustomers(customers.map(customer =>
-            customer.id === updatedCustomer.id ? updatedCustomer : customer
-        ));
-        setEditingCustomer(null);
+    const handleUpdateBooking = async (updatedBooking) => {
+        try {
+            const response = await fetch(`API_URL_HERE/bookings/${updatedBooking.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(updatedBooking),
+            });
+            const updated = await response.json();
+            setBookings(
+                bookings.map((booking) =>
+                    booking.id === updated.id ? updated : booking
+                )
+            );
+        } catch (error) {
+            console.error("Error updating booking:", error);
+        }
     };
 
-    // Hàm xóa khách hàng
-    const handleDeleteCustomer = (customerId) => {
-        setCustomers(customers.filter(customer => customer.id !== customerId));
-    };
-
-    // Hàm bắt đầu chỉnh sửa khách hàng
-    const startEditCustomer = (customer) => {
-        setEditingCustomer(customer);
+    const handleDeleteBooking = async (id) => {
+        try {
+            await fetch(`API_URL_HERE/bookings/${id}`, {
+                method: "DELETE",
+            });
+            setBookings(bookings.filter((booking) => booking.id !== id));
+        } catch (error) {
+            console.error("Error deleting booking:", error);
+        }
     };
 
     return (
         <div className="app__dashboard">
-            <h1>Customer Management</h1>
-            <CustomerForm
-                key={editingCustomer ? editingCustomer.id : 'add'}
-                onAddCustomer={editingCustomer
-                    ? handleUpdateCustomer
-                    : handleAddCustomer
-                }
-                initialData={editingCustomer || {
-                    name: '',
-                    email: '',
-                    phone: ''
-                }}
+            <h1>Restaurant Dashboard</h1>
+            <BookingList
+                bookings={bookings}
+                onUpdateBooking={handleUpdateBooking}
+                onDeleteBooking={handleDeleteBooking}
             />
-            <CustomerList
-                customers={customers}
-                onUpdateCustomer={startEditCustomer}
-                onDeleteCustomer={handleDeleteCustomer}
-            />
+            <TableStatus tables={tables} />
         </div>
     );
 };
