@@ -6,10 +6,10 @@ import "./App.css";
 
 const App = () => (
     <Router>
-        <div>
+        <div className="app">
             <Navbar />
             <Routes>
-                <Route exact path="/" component={Dashboard} />
+                <Route path="/" element={<Dashboard />} />
             </Routes>
         </div>
     </Router>

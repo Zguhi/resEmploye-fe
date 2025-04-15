@@ -46,9 +46,6 @@ const Dashboard = () => {
 
         setBookings(mockBookings);
         setTables(mockTables);
-
-        console.log("Bookings after setting state:", mockBookings);
-        console.log("Tables after setting state:", mockTables);
     }, []);
 
     const handleUpdateBooking = (updatedBooking) => {
@@ -64,9 +61,6 @@ const Dashboard = () => {
         const updatedList = bookings.filter((booking) => booking.id !== id);
         setBookings(updatedList);
     };
-
-    console.log("Bookings before rendering BookingList:", bookings);
-    console.log("Tables before rendering TableStatus:", tables);
 
     return (
         <div className="app__dashboard">
