@@ -4,32 +4,34 @@ import "./BookingList.css";
 const BookingList = ({ bookings, onUpdateBooking, onDeleteBooking }) => (
     <div className="app__booking-list">
         <h2>Booking List</h2>
-        <table>
-            <thead>
-            <tr>
-                <th>Customer Name</th>
-                <th>Email</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Number of Guests</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            {bookings.map((booking) => (
-                <tr key={booking.id}>
-                    <td>{booking.name}</td>
-                    <td>{booking.email}</td>
-                    <td>{booking.date}</td>
-                    <td>{booking.time}</td>
-                    <td>
-                        <button onClick={() => onUpdateBooking(booking)}>Edit</button>
-                        <button onClick={() => onDeleteBooking(booking.id)}>Delete</button>
-                    </td>
-                </tr>
-            ))}
-            </tbody>
-        </table>
+        {bookings.map((booking) => (
+            <div key={booking.id} className="booking-table">
+                <div className="booking-row">
+                    <div className="booking-cell">Customer Name</div>
+                    <div className="booking-cell">{booking.name}</div>
+                </div>
+                <div className="booking-row">
+                    <div className="booking-cell">Email</div>
+                    <div className="booking-cell">{booking.email}</div>
+                </div>
+                <div className="booking-row">
+                    <div className="booking-cell">Date</div>
+                    <div className="booking-cell">{booking.date}</div>
+                </div>
+                <div className="booking-row">
+                    <div className="booking-cell">Time</div>
+                    <div className="booking-cell">{booking.time}</div>
+                </div>
+                <div className="booking-row">
+                    <div className="booking-cell">Number of Guests</div>
+                    <div className="booking-cell">{booking.numGuests}</div>
+                </div>
+                <div className="booking-actions">
+                    <button onClick={() => onUpdateBooking(booking)}>Edit</button>
+                    <button onClick={() => onDeleteBooking(booking.id)}>Delete</button>
+                </div>
+            </div>
+        ))}
     </div>
 );
 

@@ -8,60 +8,65 @@ const Dashboard = () => {
     const [tables, setTables] = useState([]);
 
     useEffect(() => {
-        fetchBookings();
-        fetchTables();
+        // Sử dụng dữ liệu tĩnh
+        const mockBookings = [
+            {
+                id: 1,
+                name: "John Doe",
+                email: "john@example.com",
+                date: "2023-06-20",
+                time: "19:00",
+                numGuests: 4,
+            },
+            {
+                id: 2,
+                name: "Jane Smith",
+                email: "jane@example.com",
+                date: "2023-06-22",
+                time: "20:30",
+                numGuests: 2,
+            },
+        ];
+
+        const mockTables = [
+            {
+                id: 1,
+                number: 1,
+                status: "available",
+            },
+            {
+                id: 2,
+                number: 2,
+                status: "occupied",
+                order: ["Pizza", "Pasta"],
+                date: "2023-06-20",
+                time: "19:30",
+            },
+        ];
+
+        setBookings(mockBookings);
+        setTables(mockTables);
+
+        console.log("Bookings after setting state:", mockBookings);
+        console.log("Tables after setting state:", mockTables);
     }, []);
 
-    const fetchBookings = async () => {
-        try {
-            const response = await fetch("API_URL_HERE/bookings");
-            const data = await response.json();
-            setBookings(data);
-        } catch (error) {
-            console.error("Error fetching bookings:", error);
-        }
+    const handleUpdateBooking = (updatedBooking) => {
+        // Cập nhật đặt bàn trong danh sách
+        const updatedList = bookings.map((booking) =>
+            booking.id === updatedBooking.id ? updatedBooking : booking
+        );
+        setBookings(updatedList);
     };
 
-    const fetchTables = async () => {
-        try {
-            const response = await fetch("API_URL_HERE/tables");
-            const data = await response.json();
-            setTables(data);
-        } catch (error) {
-            console.error("Error fetching tables:", error);
-        }
+    const handleDeleteBooking = (id) => {
+        // Xóa đặt bàn khỏi danh sách
+        const updatedList = bookings.filter((booking) => booking.id !== id);
+        setBookings(updatedList);
     };
 
-    const handleUpdateBooking = async (updatedBooking) => {
-        try {
-            const response = await fetch(`API_URL_HERE/bookings/${updatedBooking.id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(updatedBooking),
-            });
-            const updated = await response.json();
-            setBookings(
-                bookings.map((booking) =>
-                    booking.id === updated.id ? updated : booking
-                )
-            );
-        } catch (error) {
-            console.error("Error updating booking:", error);
-        }
-    };
-
-    const handleDeleteBooking = async (id) => {
-        try {
-            await fetch(`API_URL_HERE/bookings/${id}`, {
-                method: "DELETE",
-            });
-            setBookings(bookings.filter((booking) => booking.id !== id));
-        } catch (error) {
-            console.error("Error deleting booking:", error);
-        }
-    };
+    console.log("Bookings before rendering BookingList:", bookings);
+    console.log("Tables before rendering TableStatus:", tables);
 
     return (
         <div className="app__dashboard">

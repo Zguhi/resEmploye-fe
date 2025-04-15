@@ -9,25 +9,34 @@
     margin-bottom: 1rem;
 }
 
-.app__booking-list table {
-    width: 100%;
-    border-collapse: collapse;
+.booking-table {
+    background-color: var(--color-black);
+    border: 1px solid var(--color-grey);
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 1rem;
 }
 
-.app__booking-list th,
-.app__booking-list td {
-    padding: 0.75rem;
-    text-align: left;
-    border-bottom: 1px solid var(--color-grey);
+.booking-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
 }
 
-.app__booking-list th {
-    color: var(--color-golden);
+.booking-cell {
+    flex: 1;
+    padding: 0.25rem;
 }
 
-.app__booking-list button {
+.booking-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.booking-actions button {
     padding: 0.25rem 0.5rem;
-    margin-right: 0.5rem;
+    margin-left: 0.5rem;
     background-color: var(--color-golden);
     color: var(--color-black);
     border: none;
@@ -36,6 +45,6 @@
     transition: background-color 0.3s ease;
 }
 
-.app__booking-list button:hover {
+.booking-actions button:hover {
     background-color: var(--color-crimson);
 }
