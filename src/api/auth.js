@@ -1,4 +1,4 @@
-const API_URL = "http://192.168.100.193:8082/auth/login";
+const API_URL = "http://192.168.1.20:8082/auth/login";
 
 export const login = async (email, password) => {
     // eslint-disable-next-line no-useless-catch
