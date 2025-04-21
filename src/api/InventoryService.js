@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.100.193:8082/api/movieProduct';
+const API_URL = 'http://192.168.1.179:8088/api/inventory';
 
 // Hàm lấy token từ localStorage (hoặc sessionStorage, hoặc state)
 const getAuthToken = () => {
@@ -23,27 +23,37 @@ const getAll = (page = 0, limit = 10, sortBy = 'id', order = 'asc') => {
     });
 };
 
-const add = (film) => {
+const getById = (id) => {
+    const token = getAuthToken();
+
+    return axios.get(`${API_URL}/${id}`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+};
+
+const add = (item) => {
     const token = getAuthToken();  // Lấy token từ nơi lưu trữ
 
-    return axios.post(API_URL, film, {
+    return axios.post(API_URL, item, {
         headers: {
             Authorization: `Bearer ${token}`  // Thêm token vào header
         }
     });
 };
 
-const update = (film) => {
+const update = (item) => {
     const token = getAuthToken();  // Lấy token từ nơi lưu trữ
 
-    return axios.put(`${API_URL}/update/${film.id}`, film, {
+    return axios.put(`${API_URL}/${item.id}`, item, {
         headers: {
             Authorization: `Bearer ${token}`  // Thêm token vào header
         }
     });
 };
 
-const deleteGenre = (id) => {
+const deleteItem = (id) => {
     const token = getAuthToken();  // Lấy token từ nơi lưu trữ
 
     return axios.delete(`${API_URL}/${id}`, {
@@ -53,9 +63,22 @@ const deleteGenre = (id) => {
     });
 };
 
+// Điều chỉnh số lượng hàng tồn kho
+const adjustQuantity = (id, quantity, reason) => {
+    const token = getAuthToken();
+
+    return axios.put(`${API_URL}/${id}/quantity`, { quantity, reason }, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+};
+
 export default {
     getAll,
+    getById,
     add,
     update,
-    delete: deleteGenre
+    delete: deleteItem,
+    adjustQuantity
 };

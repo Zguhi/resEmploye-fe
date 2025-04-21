@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import GenreService from '../api/GenreService.js';
+import GenreService from '../api/ReservationService.js';
 import Layout from '../layouts/layout.jsx';
 
-const Genre = () => {
+const ReservationPage = () => {
   const [genres, setGenres] = useState([]);
   const [newGenre, setNewGenre] = useState({ name: '' });
   const [editGenre, setEditGenre] = useState(null);
@@ -222,4 +222,4 @@ const Genre = () => {
   );
 };
 
-export default Genre;
+export default ReservationPage;

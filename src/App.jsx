@@ -1,10 +1,14 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
-import LoginForm from "./pages/LoginForm";
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
+//import LoginForm from "./pages/LoginForm"; // Vẫn giữ import
 import HomePage from "./pages/HomePage";
-import Genre from "./pages/Genre";
+import MenuPage from "./pages/MenuPage";
+import ReservationPage from "./pages/ReservationPage";
+import StaffPage from "./pages/StaffPage";
+import InventoryPage from "./pages/InventoryPage";
+import BillsPage from "./pages/BillsPage";
 import Sidebar from "./components/Sidebar";
-import FilmPage from "./pages/FlimPage.jsx";
+import ProtectedRoute from "./components/ProtectedRoute"; // Vẫn giữ import
 import './App.css'
 
 function App() {
@@ -19,10 +23,53 @@ function App() {
 
             <main className={!isLoginPage ? "flex-1 ml-64 p-6" : "flex-1"}>
                 <Routes>
-                    <Route path="/" element={<LoginForm />} />
+                    {/* Tạm thời chuyển hướng từ "/" sang "/home" */}
+                    <Route path="/" element={<Navigate to="/home" replace />} />
+                    {/* Original login route - commented temporarily */}
+                    {/* <Route path="/" element={<LoginForm />} /> */}
+
+                    {/* Comment các ProtectedRoute tạm thời */}
                     <Route path="/home" element={<HomePage />} />
-                    <Route path="/genre" element={<Genre />} />
-                    <Route path="/flimPage" element={<FilmPage />} />
+                    {/* <Route path="/home" element={
+                        <ProtectedRoute>
+                            <HomePage />
+                        </ProtectedRoute>
+                    } /> */}
+
+                    <Route path="/menu" element={<MenuPage />} />
+                    {/* <Route path="/menu" element={
+                        <ProtectedRoute>
+                            <MenuPage />
+                        </ProtectedRoute>
+                    } /> */}
+
+                    <Route path="/reservation" element={<ReservationPage />} />
+                    {/* <Route path="/reservation" element={
+                        <ProtectedRoute>
+                            <ReservationPage />
+                        </ProtectedRoute>
+                    } /> */}
+
+                    <Route path="/staff" element={<StaffPage />} />
+                    {/* <Route path="/staff" element={
+                        <ProtectedRoute>
+                            <StaffPage />
+                        </ProtectedRoute>
+                    } /> */}
+
+                    <Route path="/inventory" element={<InventoryPage />} />
+                    {/* <Route path="/inventory" element={
+                        <ProtectedRoute>
+                            <InventoryPage />
+                        </ProtectedRoute>
+                    } /> */}
+
+                    <Route path="/bills" element={<BillsPage />} />
+                    {/* <Route path="/bills" element={
+                        <ProtectedRoute>
+                            <BillsPage />
+                        </ProtectedRoute>
+                    } /> */}
                 </Routes>
             </main>
         </div>
