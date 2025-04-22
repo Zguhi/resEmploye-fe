@@ -10,9 +10,7 @@ const StaffPage = () => {
         phone: '',
         email: '',
         address: '',
-        hireDate: '',
-        salary: '',
-        status: 'active'
+        role: 'Restaurant'
     });
     const [editStaff, setEditStaff] = useState(null);
     const [page, setPage] = useState(0);
@@ -20,7 +18,7 @@ const StaffPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const positions = ['Quản lý', 'Đầu bếp', 'Phục vụ', 'Thu ngân', 'Tiếp tân', 'Giao hàng', 'Khác'];
-    const statusOptions = ['active', 'inactive', 'on_leave'];
+    const roleOptions = ['Customer', 'Restaurant', 'Admin', 'Delivery'];
 
     useEffect(() => {
         fetchStaff();
@@ -29,7 +27,7 @@ const StaffPage = () => {
     // Lấy danh sách nhân viên
     const fetchStaff = async () => {
         try {
-            const response = await StaffService.getAll(page, 10, 'id', 'asc');
+            const response = await StaffService.getAll(page, 10, 'user_id', 'asc');
             const data = response.data.data;
             setStaffList(data.content);
             setTotalPages(data.totalPages);
@@ -53,9 +51,7 @@ const StaffPage = () => {
                 phone: '',
                 email: '',
                 address: '',
-                hireDate: '',
-                salary: '',
-                status: 'active'
+                role: 'Restaurant'
             });
             fetchStaff();
             setIsModalOpen(false);
@@ -66,7 +62,7 @@ const StaffPage = () => {
 
     // Cập nhật nhân viên
     const handleUpdate = async () => {
-        if (!editStaff.name.trim() || !editStaff.phone.trim()) return;
+        if (!editStaff.name.trim() || !editStaff.phone_number.trim()) return;
 
         try {
             const response = await StaffService.update(editStaff);
@@ -107,29 +103,15 @@ const StaffPage = () => {
         return new Date(dateString).toLocaleDateString('vi-VN', options);
     };
 
-    // Lấy trạng thái hiển thị
-    const getStatusDisplay = (status) => {
-        switch(status) {
-            case 'active': return 'Đang làm việc';
-            case 'inactive': return 'Đã nghỉ việc';
-            case 'on_leave': return 'Tạm nghỉ';
-            default: return status;
+    // Lấy tên vai trò hiển thị
+    const getRoleDisplay = (role) => {
+        switch(role) {
+            case 'Customer': return 'Khách hàng';
+            case 'Restaurant': return 'Nhân viên nhà hàng';
+            case 'Admin': return 'Quản trị viên';
+            case 'Delivery': return 'Người giao hàng';
+            default: return role;
         }
-    };
-
-    // Lấy màu hiển thị trạng thái
-    const getStatusColor = (status) => {
-        switch(status) {
-            case 'active': return 'bg-green-100 text-green-800';
-            case 'inactive': return 'bg-red-100 text-red-800';
-            case 'on_leave': return 'bg-yellow-100 text-yellow-800';
-            default: return 'bg-gray-100 text-gray-800';
-        }
-    };
-
-    // Định dạng tiền lương
-    const formatSalary = (salary) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(salary);
     };
 
     return (
@@ -162,13 +144,13 @@ const StaffPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Chức vụ</label>
+                                <label className="block text-sm font-medium text-gray-700">Vị trí</label>
                                 <select
                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                                     value={newStaff.position}
                                     onChange={(e) => setNewStaff({ ...newStaff, position: e.target.value })}
                                 >
-                                    <option value="">-- Chọn chức vụ --</option>
+                                    <option value="">-- Chọn vị trí --</option>
                                     {positions.map((pos) => (
                                         <option key={pos} value={pos}>{pos}</option>
                                     ))}
@@ -209,24 +191,16 @@ const StaffPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Ngày vào làm</label>
-                                <input
-                                    type="date"
+                                <label className="block text-sm font-medium text-gray-700">Vai trò</label>
+                                <select
                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={newStaff.hireDate}
-                                    onChange={(e) => setNewStaff({ ...newStaff, hireDate: e.target.value })}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Lương</label>
-                                <input
-                                    type="number"
-                                    placeholder="Lương (VNĐ)"
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={newStaff.salary}
-                                    onChange={(e) => setNewStaff({ ...newStaff, salary: e.target.value })}
-                                />
+                                    value={newStaff.role}
+                                    onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
+                                >
+                                    {roleOptions.map((role) => (
+                                        <option key={role} value={role}>{getRoleDisplay(role)}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 
@@ -255,21 +229,20 @@ const StaffPage = () => {
                     <tr className="bg-amber-50 text-left">
                         <th className="border px-4 py-2">ID</th>
                         <th className="border px-4 py-2">Họ tên</th>
-                        <th className="border px-4 py-2">Chức vụ</th>
-                        <th className="border px-4 py-2">SĐT</th>
                         <th className="border px-4 py-2">Email</th>
-                        <th className="border px-4 py-2">Ngày vào làm</th>
-                        <th className="border px-4 py-2">Lương</th>
-                        <th className="border px-4 py-2">Trạng thái</th>
+                        <th className="border px-4 py-2">SĐT</th>
+                        <th className="border px-4 py-2">Địa chỉ</th>
+                        <th className="border px-4 py-2">Vai trò</th>
+                        <th className="border px-4 py-2">Ngày tạo</th>
                         <th className="border px-4 py-2">Hành động</th>
                     </tr>
                     </thead>
                     <tbody>
                     {staffList.map((staff) => (
-                        <tr key={staff.id}>
-                            <td className="border px-4 py-2">{staff.id}</td>
+                        <tr key={staff.user_id}>
+                            <td className="border px-4 py-2">{staff.user_id}</td>
                             <td className="border px-4 py-2">
-                                {editStaff?.id === staff.id ? (
+                                {editStaff?.user_id === staff.user_id ? (
                                     <input
                                         value={editStaff.name}
                                         onChange={(e) => setEditStaff({ ...editStaff, name: e.target.value })}
@@ -280,34 +253,7 @@ const StaffPage = () => {
                                 )}
                             </td>
                             <td className="border px-4 py-2">
-                                {editStaff?.id === staff.id ? (
-                                    <select
-                                        value={editStaff.position}
-                                        onChange={(e) => setEditStaff({ ...editStaff, position: e.target.value })}
-                                        className="border p-1 rounded w-full"
-                                    >
-                                        <option value="">-- Chọn chức vụ --</option>
-                                        {positions.map((pos) => (
-                                            <option key={pos} value={pos}>{pos}</option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    staff.position
-                                )}
-                            </td>
-                            <td className="border px-4 py-2">
-                                {editStaff?.id === staff.id ? (
-                                    <input
-                                        value={editStaff.phone}
-                                        onChange={(e) => setEditStaff({ ...editStaff, phone: e.target.value })}
-                                        className="border p-1 rounded w-full"
-                                    />
-                                ) : (
-                                    staff.phone
-                                )}
-                            </td>
-                            <td className="border px-4 py-2">
-                                {editStaff?.id === staff.id ? (
+                                {editStaff?.user_id === staff.user_id ? (
                                     <input
                                         type="email"
                                         value={editStaff.email}
@@ -319,48 +265,47 @@ const StaffPage = () => {
                                 )}
                             </td>
                             <td className="border px-4 py-2">
-                                {editStaff?.id === staff.id ? (
+                                {editStaff?.user_id === staff.user_id ? (
                                     <input
-                                        type="date"
-                                        value={editStaff.hireDate}
-                                        onChange={(e) => setEditStaff({ ...editStaff, hireDate: e.target.value })}
+                                        value={editStaff.phone_number}
+                                        onChange={(e) => setEditStaff({ ...editStaff, phone_number: e.target.value })}
                                         className="border p-1 rounded w-full"
                                     />
                                 ) : (
-                                    formatDate(staff.hireDate)
+                                    staff.phone_number
                                 )}
                             </td>
                             <td className="border px-4 py-2">
-                                {editStaff?.id === staff.id ? (
+                                {editStaff?.user_id === staff.user_id ? (
                                     <input
-                                        type="number"
-                                        value={editStaff.salary}
-                                        onChange={(e) => setEditStaff({ ...editStaff, salary: e.target.value })}
+                                        value={editStaff.address || ''}
+                                        onChange={(e) => setEditStaff({ ...editStaff, address: e.target.value })}
                                         className="border p-1 rounded w-full"
                                     />
                                 ) : (
-                                    formatSalary(staff.salary)
+                                    staff.address || '-'
                                 )}
                             </td>
                             <td className="border px-4 py-2">
-                                {editStaff?.id === staff.id ? (
+                                {editStaff?.user_id === staff.user_id ? (
                                     <select
-                                        value={editStaff.status}
-                                        onChange={(e) => setEditStaff({ ...editStaff, status: e.target.value })}
+                                        value={editStaff.role}
+                                        onChange={(e) => setEditStaff({ ...editStaff, role: e.target.value })}
                                         className="border p-1 rounded w-full"
                                     >
-                                        {statusOptions.map(status => (
-                                            <option key={status} value={status}>{getStatusDisplay(status)}</option>
+                                        {roleOptions.map(role => (
+                                            <option key={role} value={role}>{getRoleDisplay(role)}</option>
                                         ))}
                                     </select>
                                 ) : (
-                                    <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(staff.status)}`}>
-                      {getStatusDisplay(staff.status)}
-                    </span>
+                                    getRoleDisplay(staff.role)
                                 )}
                             </td>
                             <td className="border px-4 py-2">
-                                {editStaff?.id === staff.id ? (
+                                {formatDate(staff.created_at)}
+                            </td>
+                            <td className="border px-4 py-2">
+                                {editStaff?.user_id === staff.user_id ? (
                                     <div className="flex gap-2">
                                         <button
                                             onClick={handleUpdate}
@@ -384,7 +329,7 @@ const StaffPage = () => {
                                             Sửa
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(staff.id)}
+                                            onClick={() => handleDelete(staff.user_id)}
                                             className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
                                         >
                                             Xóa
@@ -408,8 +353,8 @@ const StaffPage = () => {
                     Trước
                 </button>
                 <span className="px-3 py-1">
-          {page + 1} / {totalPages}
-        </span>
+                    {page + 1} / {totalPages}
+                </span>
                 <button
                     onClick={() => setPage((prev) => Math.min(prev + 1, totalPages - 1))}
                     disabled={page + 1 >= totalPages}

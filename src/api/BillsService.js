@@ -1,13 +1,13 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.179:8088/api/bills';
+const API_URL = 'http://10.22.185.170:8088/api/orders';
 
 // Hàm lấy token từ localStorage (hoặc sessionStorage, hoặc state)
 const getAuthToken = () => {
     return localStorage.getItem('authToken');  // Hoặc bạn có thể thay đổi nơi lưu trữ token của bạn
 };
 
-const getAll = (page = 0, limit = 10, sortBy = 'id', order = 'asc') => {
+const getAll = (page = 0, limit = 10, sortBy = 'order_id', order = 'desc') => {
     const token = getAuthToken();  // Lấy token từ nơi lưu trữ
 
     return axios.get(API_URL, {
@@ -46,7 +46,7 @@ const add = (bill) => {
 const update = (bill) => {
     const token = getAuthToken();  // Lấy token từ nơi lưu trữ
 
-    return axios.put(`${API_URL}/${bill.id}`, bill, {
+    return axios.put(`${API_URL}/${bill.order_id}`, bill, {
         headers: {
             Authorization: `Bearer ${token}`  // Thêm token vào header
         }
@@ -67,7 +67,7 @@ const deleteBill = (id) => {
 const getBillDetails = (id) => {
     const token = getAuthToken();
 
-    return axios.get(`${API_URL}/${id}/details`, {
+    return axios.get(`${API_URL}/${id}/items`, {
         headers: {
             Authorization: `Bearer ${token}`
         }
@@ -89,6 +89,17 @@ const getRevenue = (startDate, endDate) => {
     });
 };
 
+// Cập nhật trạng thái đơn hàng
+const updateStatus = (orderId, status) => {
+    const token = getAuthToken();
+
+    return axios.put(`${API_URL}/${orderId}/status`, { status }, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+};
+
 export default {
     getAll,
     getById,
@@ -96,5 +107,6 @@ export default {
     update,
     delete: deleteBill,
     getBillDetails,
-    getRevenue
+    getRevenue,
+    updateStatus
 };

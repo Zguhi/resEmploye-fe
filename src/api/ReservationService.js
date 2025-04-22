@@ -36,7 +36,20 @@ const getById = (id) => {
 const add = (reservation) => {
   const token = getAuthToken();  // Lấy token từ nơi lưu trữ
 
-  return axios.post(API_URL, reservation, {
+  // Format dữ liệu để phù hợp với API
+  const reservationData = {
+    customerName: reservation.customerName,
+    phoneNumber: reservation.phone,
+    email: reservation.email,
+    reservationDate: reservation.date,
+    reservationTime: reservation.time,
+    numberOfGuests: reservation.guestCount,
+    tableNumber: reservation.tableNumber,
+    status: reservation.status || 'pending',
+    notes: reservation.notes
+  };
+
+  return axios.post(API_URL, reservationData, {
     headers: {
       Authorization: `Bearer ${token}`  // Thêm token vào header
     }
@@ -46,7 +59,21 @@ const add = (reservation) => {
 const update = (reservation) => {
   const token = getAuthToken();  // Lấy token từ nơi lưu trữ
 
-  return axios.put(`${API_URL}/${reservation.id}`, reservation, {
+  // Format dữ liệu để phù hợp với API
+  const reservationData = {
+    id: reservation.id,
+    customerName: reservation.customerName,
+    phoneNumber: reservation.phone,
+    email: reservation.email,
+    reservationDate: reservation.date,
+    reservationTime: reservation.time,
+    numberOfGuests: reservation.guestCount,
+    tableNumber: reservation.tableNumber,
+    status: reservation.status,
+    notes: reservation.notes
+  };
+
+  return axios.put(`${API_URL}/${reservationData.id}`, reservationData, {
     headers: {
       Authorization: `Bearer ${token}`  // Thêm token vào header
     }

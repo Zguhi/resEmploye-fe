@@ -4,21 +4,28 @@ import MenuService from '../api/MenuService.js';
 
 const MenuPage = () => {
     const [menuItems, setMenuItems] = useState([]);
-    const [newMenuItem, setNewMenuItem] = useState({ name: '', price: '', category: '', description: '' });
+    const [categories, setCategories] = useState([]);
+    const [newMenuItem, setNewMenuItem] = useState({
+        name: '',
+        price: '',
+        category_id: '',
+        description: '',
+        image_url: ''
+    });
     const [editMenuItem, setEditMenuItem] = useState(null);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const categories = ['Món khai vị', 'Món chính', 'Món tráng miệng', 'Đồ uống', 'Món đặc biệt'];
 
     useEffect(() => {
         fetchMenuItems();
+        fetchCategories();
     }, [page]);
 
     // Lấy danh sách món ăn
     const fetchMenuItems = async () => {
         try {
-            const response = await MenuService.getAll(page, 10, 'id', 'asc');
+            const response = await MenuService.getAll(page, 10, 'dish_id', 'asc');
             const data = response.data.data;
             setMenuItems(data.content);
             setTotalPages(data.totalPages);
@@ -27,13 +34,37 @@ const MenuPage = () => {
         }
     };
 
+    // Lấy danh sách danh mục
+    const fetchCategories = async () => {
+        try {
+            const response = await MenuService.getCategories();
+            setCategories(response.data.data || []);
+        } catch (error) {
+            console.error('Lỗi khi lấy danh sách danh mục:', error);
+        }
+    };
+
     // Thêm món ăn mới
     const handleAddMenuItem = async () => {
         if (newMenuItem.name.trim() === '') return;
 
         try {
-            await MenuService.add(newMenuItem);
-            setNewMenuItem({ name: '', price: '', category: '', description: '' });
+            const user = JSON.parse(localStorage.getItem('user'));
+            const restaurantId = user.user_id; // Nếu người dùng là nhà hàng
+
+            const menuItemToAdd = {
+                ...newMenuItem,
+                restaurant_id: restaurantId
+            };
+
+            await MenuService.add(menuItemToAdd);
+            setNewMenuItem({
+                name: '',
+                price: '',
+                category_id: '',
+                description: '',
+                image_url: ''
+            });
             fetchMenuItems();
             setIsModalOpen(false);
         } catch (err) {
@@ -77,6 +108,17 @@ const MenuPage = () => {
         setEditMenuItem({ ...item });
     };
 
+    // Lấy tên danh mục từ ID
+    const getCategoryName = (categoryId) => {
+        const category = categories.find(cat => cat.category_id === categoryId);
+        return category ? category.name : 'Không có danh mục';
+    };
+
+    // Format giá tiền
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+    };
+
     return (
         <Layout>
             <h2 className="text-2xl font-bold mb-4 text-amber-700">Quản lý Thực đơn</h2>
@@ -118,15 +160,17 @@ const MenuPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Loại</label>
+                                <label className="block text-sm font-medium text-gray-700">Danh mục</label>
                                 <select
                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={newMenuItem.category}
-                                    onChange={(e) => setNewMenuItem({ ...newMenuItem, category: e.target.value })}
+                                    value={newMenuItem.category_id}
+                                    onChange={(e) => setNewMenuItem({ ...newMenuItem, category_id: e.target.value })}
                                 >
-                                    <option value="">-- Chọn loại --</option>
+                                    <option value="">-- Chọn danh mục --</option>
                                     {categories.map((cat) => (
-                                        <option key={cat} value={cat}>{cat}</option>
+                                        <option key={cat.category_id} value={cat.category_id}>
+                                            {cat.name}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
@@ -139,6 +183,17 @@ const MenuPage = () => {
                                     value={newMenuItem.description}
                                     onChange={(e) => setNewMenuItem({ ...newMenuItem, description: e.target.value })}
                                     rows="3"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Đường dẫn hình ảnh</label>
+                                <input
+                                    type="text"
+                                    placeholder="URL hình ảnh"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                    value={newMenuItem.image_url}
+                                    onChange={(e) => setNewMenuItem({ ...newMenuItem, image_url: e.target.value })}
                                 />
                             </div>
                         </div>
@@ -168,19 +223,18 @@ const MenuPage = () => {
                     <tr className="bg-amber-50 text-left">
                         <th className="border px-4 py-2">ID</th>
                         <th className="border px-4 py-2">Tên món</th>
-                        <th className="border px-4 py-2">Loại</th>
+                        <th className="border px-4 py-2">Danh mục</th>
                         <th className="border px-4 py-2">Giá</th>
                         <th className="border px-4 py-2">Mô tả</th>
-                        <th className="border px-4 py-2">Trạng thái</th>
                         <th className="border px-4 py-2">Hành động</th>
                     </tr>
                     </thead>
                     <tbody>
                     {menuItems.map((item) => (
-                        <tr key={item.id}>
-                            <td className="border px-4 py-2">{item.id}</td>
+                        <tr key={item.dish_id}>
+                            <td className="border px-4 py-2">{item.dish_id}</td>
                             <td className="border px-4 py-2">
-                                {editMenuItem?.id === item.id ? (
+                                {editMenuItem?.dish_id === item.dish_id ? (
                                     <input
                                         value={editMenuItem.name}
                                         onChange={(e) => setEditMenuItem({ ...editMenuItem, name: e.target.value })}
@@ -191,22 +245,25 @@ const MenuPage = () => {
                                 )}
                             </td>
                             <td className="border px-4 py-2">
-                                {editMenuItem?.id === item.id ? (
+                                {editMenuItem?.dish_id === item.dish_id ? (
                                     <select
-                                        value={editMenuItem.category}
-                                        onChange={(e) => setEditMenuItem({ ...editMenuItem, category: e.target.value })}
+                                        value={editMenuItem.category_id}
+                                        onChange={(e) => setEditMenuItem({ ...editMenuItem, category_id: e.target.value })}
                                         className="border p-1 rounded w-full"
                                     >
+                                        <option value="">-- Chọn danh mục --</option>
                                         {categories.map((cat) => (
-                                            <option key={cat} value={cat}>{cat}</option>
+                                            <option key={cat.category_id} value={cat.category_id}>
+                                                {cat.name}
+                                            </option>
                                         ))}
                                     </select>
                                 ) : (
-                                    item.category
+                                    getCategoryName(item.category_id)
                                 )}
                             </td>
                             <td className="border px-4 py-2">
-                                {editMenuItem?.id === item.id ? (
+                                {editMenuItem?.dish_id === item.dish_id ? (
                                     <input
                                         type="number"
                                         value={editMenuItem.price}
@@ -214,11 +271,11 @@ const MenuPage = () => {
                                         className="border p-1 rounded w-full"
                                     />
                                 ) : (
-                                    `${Number(item.price).toLocaleString()} VNĐ`
+                                    formatPrice(item.price)
                                 )}
                             </td>
                             <td className="border px-4 py-2">
-                                {editMenuItem?.id === item.id ? (
+                                {editMenuItem?.dish_id === item.dish_id ? (
                                     <textarea
                                         value={editMenuItem.description}
                                         onChange={(e) => setEditMenuItem({ ...editMenuItem, description: e.target.value })}
@@ -230,19 +287,7 @@ const MenuPage = () => {
                                 )}
                             </td>
                             <td className="border px-4 py-2">
-                                {editMenuItem?.id === item.id ? (
-                                    <select
-                                        value={editMenuItem.active}
-                                        onChange={(e) => setEditMenuItem({ ...editMenuItem, active: e.target.value === 'true' })}
-                                        className="border p-1 rounded w-full"
-                                    >
-                                        <option value="true">Có sẵn</option>
-                                        <option value="false">Hết hàng</option>
-                                    </select>
-                                ) : item.active ? 'Có sẵn' : 'Hết hàng'}
-                            </td>
-                            <td className="border px-4 py-2">
-                                {editMenuItem?.id === item.id ? (
+                                {editMenuItem?.dish_id === item.dish_id ? (
                                     <div className="flex gap-2">
                                         <button
                                             onClick={handleUpdate}
@@ -266,7 +311,7 @@ const MenuPage = () => {
                                             Sửa
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(item.id)}
+                                            onClick={() => handleDelete(item.dish_id)}
                                             className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
                                         >
                                             Xóa
@@ -290,8 +335,8 @@ const MenuPage = () => {
                     Trước
                 </button>
                 <span className="px-3 py-1">
-          {page + 1} / {totalPages}
-        </span>
+                    {page + 1} / {totalPages}
+                </span>
                 <button
                     onClick={() => setPage((prev) => Math.min(prev + 1, totalPages - 1))}
                     disabled={page + 1 >= totalPages}

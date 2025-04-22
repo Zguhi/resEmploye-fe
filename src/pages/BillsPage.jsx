@@ -13,8 +13,7 @@ const BillsPage = () => {
     const [endDate, setEndDate] = useState('');
     const [revenueData, setRevenueData] = useState(null);
 
-    const paymentMethods = ['Tiền mặt', 'Thẻ', 'Chuyển khoản', 'Momo', 'ZaloPay'];
-    const statusOptions = ['completed', 'pending', 'cancelled'];
+    const statusOptions = ['Pending', 'Preparing', 'Delivering', 'Completed', 'Cancelled'];
 
     useEffect(() => {
         fetchBills();
@@ -23,7 +22,7 @@ const BillsPage = () => {
     // Lấy danh sách hóa đơn
     const fetchBills = async () => {
         try {
-            const response = await BillsService.getAll(page, 10, 'id', 'desc');
+            const response = await BillsService.getAll(page, 10, 'order_id', 'desc');
             const data = response.data.data;
             setBills(data.content);
             setTotalPages(data.totalPages);
@@ -45,8 +44,19 @@ const BillsPage = () => {
     // Xem chi tiết hóa đơn
     const handleViewDetails = async (bill) => {
         setSelectedBill(bill);
-        await fetchBillDetails(bill.id);
+        await fetchBillDetails(bill.order_id);
         setIsModalOpen(true);
+    };
+
+    // Cập nhật trạng thái hóa đơn
+    const handleUpdateStatus = async (orderId, newStatus) => {
+        try {
+            await BillsService.updateStatus(orderId, newStatus);
+            // Cập nhật danh sách hóa đơn sau khi thay đổi trạng thái
+            fetchBills();
+        } catch (error) {
+            console.error('Lỗi khi cập nhật trạng thái hóa đơn:', error);
+        }
     };
 
     // Lấy doanh thu theo khoảng thời gian
@@ -78,9 +88,11 @@ const BillsPage = () => {
     // Lấy trạng thái hiển thị
     const getStatusDisplay = (status) => {
         switch(status) {
-            case 'completed': return 'Hoàn thành';
-            case 'pending': return 'Chờ thanh toán';
-            case 'cancelled': return 'Đã hủy';
+            case 'Completed': return 'Hoàn thành';
+            case 'Pending': return 'Chờ thanh toán';
+            case 'Preparing': return 'Đang chuẩn bị';
+            case 'Delivering': return 'Đang giao hàng';
+            case 'Cancelled': return 'Đã hủy';
             default: return status;
         }
     };
@@ -88,11 +100,20 @@ const BillsPage = () => {
     // Lấy màu hiển thị trạng thái
     const getStatusColor = (status) => {
         switch(status) {
-            case 'completed': return 'bg-green-100 text-green-800';
-            case 'pending': return 'bg-yellow-100 text-yellow-800';
-            case 'cancelled': return 'bg-red-100 text-red-800';
+            case 'Completed': return 'bg-green-100 text-green-800';
+            case 'Pending': return 'bg-yellow-100 text-yellow-800';
+            case 'Preparing': return 'bg-blue-100 text-blue-800';
+            case 'Delivering': return 'bg-indigo-100 text-indigo-800';
+            case 'Cancelled': return 'bg-red-100 text-red-800';
             default: return 'bg-gray-100 text-gray-800';
         }
+    };
+
+    // Lấy thông tin khách hàng
+    const getCustomerInfo = (userId) => {
+        // Trong thực tế, bạn có thể cần gọi API để lấy thông tin khách hàng
+        // Hoặc cải thiện API để trả về thông tin khách hàng cùng với thông tin đơn hàng
+        return "Khách lẻ";
     };
 
     return (
@@ -154,9 +175,8 @@ const BillsPage = () => {
                     <tr className="bg-amber-50 text-left">
                         <th className="border px-4 py-2">ID</th>
                         <th className="border px-4 py-2">Ngày giờ</th>
-                        <th className="border px-4 py-2">Bàn</th>
                         <th className="border px-4 py-2">Khách hàng</th>
-                        <th className="border px-4 py-2">Thanh toán</th>
+                        <th className="border px-4 py-2">Địa chỉ giao hàng</th>
                         <th className="border px-4 py-2">Tổng tiền</th>
                         <th className="border px-4 py-2">Trạng thái</th>
                         <th className="border px-4 py-2">Hành động</th>
@@ -164,25 +184,38 @@ const BillsPage = () => {
                     </thead>
                     <tbody>
                     {bills.map((bill) => (
-                        <tr key={bill.id}>
-                            <td className="border px-4 py-2">{bill.id}</td>
-                            <td className="border px-4 py-2">{formatDate(bill.createdAt)}</td>
-                            <td className="border px-4 py-2">{bill.tableNumber || '-'}</td>
-                            <td className="border px-4 py-2">{bill.customerName || 'Khách lẻ'}</td>
-                            <td className="border px-4 py-2">{bill.paymentMethod}</td>
-                            <td className="border px-4 py-2 font-semibold">{formatCurrency(bill.totalAmount)}</td>
+                        <tr key={bill.order_id}>
+                            <td className="border px-4 py-2">{bill.order_id}</td>
+                            <td className="border px-4 py-2">{formatDate(bill.created_at)}</td>
+                            <td className="border px-4 py-2">{getCustomerInfo(bill.user_id)}</td>
+                            <td className="border px-4 py-2">{bill.delivery_address || '-'}</td>
+                            <td className="border px-4 py-2 font-semibold">{formatCurrency(bill.total_price)}</td>
                             <td className="border px-4 py-2">
-                  <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(bill.status)}`}>
-                    {getStatusDisplay(bill.status)}
-                  </span>
+                              <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(bill.order_status)}`}>
+                                {getStatusDisplay(bill.order_status)}
+                              </span>
                             </td>
                             <td className="border px-4 py-2">
-                                <button
-                                    onClick={() => handleViewDetails(bill)}
-                                    className="bg-amber-500 text-white px-2 py-1 rounded hover:bg-amber-600"
-                                >
-                                    Chi tiết
-                                </button>
+                                <div className="flex gap-2 flex-wrap">
+                                    <button
+                                        onClick={() => handleViewDetails(bill)}
+                                        className="bg-amber-500 text-white px-2 py-1 rounded hover:bg-amber-600"
+                                    >
+                                        Chi tiết
+                                    </button>
+
+                                    <select
+                                        className="border border-gray-300 rounded px-2 py-1 text-sm"
+                                        value={bill.order_status}
+                                        onChange={(e) => handleUpdateStatus(bill.order_id, e.target.value)}
+                                    >
+                                        {statusOptions.map(status => (
+                                            <option key={status} value={status}>
+                                                {getStatusDisplay(status)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </td>
                         </tr>
                     ))}
@@ -200,8 +233,8 @@ const BillsPage = () => {
                     Trước
                 </button>
                 <span className="px-3 py-1">
-          {page + 1} / {totalPages}
-        </span>
+                  {page + 1} / {totalPages}
+                </span>
                 <button
                     onClick={() => setPage((prev) => Math.min(prev + 1, totalPages - 1))}
                     disabled={page + 1 >= totalPages}
@@ -216,7 +249,7 @@ const BillsPage = () => {
                 <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
                     <div className="bg-white p-6 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-semibold text-amber-700">Chi tiết hóa đơn #{selectedBill.id}</h3>
+                            <h3 className="text-xl font-semibold text-amber-700">Chi tiết hóa đơn #{selectedBill.order_id}</h3>
                             <button
                                 onClick={() => setIsModalOpen(false)}
                                 className="text-gray-500 hover:text-gray-700"
@@ -228,32 +261,22 @@ const BillsPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                             <div>
                                 <p className="text-sm text-gray-600">Khách hàng:</p>
-                                <p className="font-medium">{selectedBill.customerName || 'Khách lẻ'}</p>
+                                <p className="font-medium">{getCustomerInfo(selectedBill.user_id)}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-gray-600">Ngày giờ:</p>
-                                <p className="font-medium">{formatDate(selectedBill.createdAt)}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600">Phương thức thanh toán:</p>
-                                <p className="font-medium">{selectedBill.paymentMethod}</p>
+                                <p className="font-medium">{formatDate(selectedBill.created_at)}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-gray-600">Trạng thái:</p>
-                                <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(selectedBill.status)}`}>
-                  {getStatusDisplay(selectedBill.status)}
-                </span>
+                                <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(selectedBill.order_status)}`}>
+                                  {getStatusDisplay(selectedBill.order_status)}
+                                </span>
                             </div>
-                            {selectedBill.tableNumber && (
+                            {selectedBill.delivery_address && (
                                 <div>
-                                    <p className="text-sm text-gray-600">Bàn số:</p>
-                                    <p className="font-medium">{selectedBill.tableNumber}</p>
-                                </div>
-                            )}
-                            {selectedBill.notes && (
-                                <div>
-                                    <p className="text-sm text-gray-600">Ghi chú:</p>
-                                    <p className="font-medium">{selectedBill.notes}</p>
+                                    <p className="text-sm text-gray-600">Địa chỉ giao hàng:</p>
+                                    <p className="font-medium">{selectedBill.delivery_address}</p>
                                 </div>
                             )}
                         </div>
@@ -271,12 +294,12 @@ const BillsPage = () => {
                             </thead>
                             <tbody>
                             {billDetails.map((item, index) => (
-                                <tr key={index}>
+                                <tr key={item.order_item_id}>
                                     <td className="border px-4 py-2">{index + 1}</td>
-                                    <td className="border px-4 py-2">{item.dishName}</td>
+                                    <td className="border px-4 py-2">{item.dish_name || `Món #${item.dish_id}`}</td>
                                     <td className="border px-4 py-2">{item.quantity}</td>
-                                    <td className="border px-4 py-2">{formatCurrency(item.unitPrice)}</td>
-                                    <td className="border px-4 py-2">{formatCurrency(item.quantity * item.unitPrice)}</td>
+                                    <td className="border px-4 py-2">{formatCurrency(item.price)}</td>
+                                    <td className="border px-4 py-2">{formatCurrency(item.quantity * item.price)}</td>
                                 </tr>
                             ))}
                             </tbody>
@@ -284,25 +307,9 @@ const BillsPage = () => {
 
                         <div className="flex justify-end">
                             <div className="w-48">
-                                <div className="flex justify-between py-2">
-                                    <span>Tạm tính:</span>
-                                    <span>{formatCurrency(selectedBill.subtotal || selectedBill.totalAmount)}</span>
-                                </div>
-                                {selectedBill.discount > 0 && (
-                                    <div className="flex justify-between py-2">
-                                        <span>Giảm giá:</span>
-                                        <span>-{formatCurrency(selectedBill.discount)}</span>
-                                    </div>
-                                )}
-                                {selectedBill.tax > 0 && (
-                                    <div className="flex justify-between py-2">
-                                        <span>Thuế:</span>
-                                        <span>{formatCurrency(selectedBill.tax)}</span>
-                                    </div>
-                                )}
                                 <div className="flex justify-between py-2 border-t font-bold">
                                     <span>Tổng cộng:</span>
-                                    <span>{formatCurrency(selectedBill.totalAmount)}</span>
+                                    <span>{formatCurrency(selectedBill.total_price)}</span>
                                 </div>
                             </div>
                         </div>
