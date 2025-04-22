@@ -1,13 +1,13 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 //import LoginForm from "./pages/LoginForm"; // Vẫn giữ import
-import HomePage from "./pages/HomePage";
-import MenuPage from "./pages/MenuPage";
-import ReservationPage from "./pages/ReservationPage";
-import StaffPage from "./pages/StaffPage";
-import InventoryPage from "./pages/InventoryPage";
-import BillsPage from "./pages/BillsPage";
-import Sidebar from "./components/Sidebar";
+import HomePage from "./pages/HomePage.jsx";
+import MenuPage from "./pages/MenuPage.jsx";
+import ReservationPage from "./pages/ReservationPage.jsx";
+import StaffPage from "./pages/StaffPage.jsx";
+import InventoryPage from "./pages/InventoryPage.jsx";
+import BillsPage from "./pages/BillsPage.jsx";
+import Sidebar from "./components/Sidebar.jsx";
 import ProtectedRoute from "./components/ProtectedRoute"; // Vẫn giữ import
 import './App.css'
 
