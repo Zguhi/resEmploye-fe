@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // URL gốc của API backend
-export const API_BASE_URL = 'http://192.168.1.95:8088'; // Đã cập nhật theo URL trong code của bạn
+export const API_BASE_URL = 'http://192.168.1.95:8080'; // Đã cập nhật theo URL trong code của bạn
 
 // Tạo một instance của axios
 const api = axios.create({

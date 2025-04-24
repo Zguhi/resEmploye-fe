@@ -25,20 +25,34 @@ const MenuPage = () => {
     // Lấy danh sách món ăn
     const fetchMenuItems = async () => {
         try {
-            const response = await MenuService.getAll(page, 10, 'dish_id', 'asc');
+            const response = await MenuService.getAll();
             const data = response.data.data;
             setMenuItems(data.content);
             setTotalPages(data.totalPages);
+            console.log(response);
         } catch (error) {
             console.error('Lỗi khi lấy danh sách món ăn:', error);
         }
     };
+    // const fetchMenuItems = async () => {
+    //     try {
+    //         const response = await MenuService.getAll();
+    //         if (response.data) {
+    //             setMenuItems(response.data);
+    //         } else {
+    //             console.error('Invalid API response:', response);
+    //         }
+    //     } catch (error) {
+    //         console.error('Error fetching menu items:', error);
+    //     }
+    // };
 
     // Lấy danh sách danh mục
     const fetchCategories = async () => {
         try {
             const response = await MenuService.getCategories();
             setCategories(response.data.data || []);
+            console.log(response);
         } catch (error) {
             console.error('Lỗi khi lấy danh sách danh mục:', error);
         }

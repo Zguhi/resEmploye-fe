@@ -7,16 +7,11 @@ const getAuthToken = () => {
     return localStorage.getItem('authToken');  // Hoặc bạn có thể thay đổi nơi lưu trữ token của bạn
 };
 
-const getAll = (page = 0, limit = 10, sortBy = 'dish_id', order = 'asc') => {
+const getAll = () => {
     const token = getAuthToken();  // Lấy token từ nơi lưu trữ
 
     return axios.get(API_URL, {
-        params: {
-            page,
-            limit,
-            sortBy,
-            order
-        },
+
         headers: {
             Authorization: `Bearer ${token}`  // Thêm token vào header
         }
@@ -25,7 +20,7 @@ const getAll = (page = 0, limit = 10, sortBy = 'dish_id', order = 'asc') => {
 
 const getCategories = () => {
     const token = getAuthToken();
-    return axios.get(`http://10.22.185.170:8088/api/categories`, {
+    return axios.get(`http://192.168.1.95:8080/api/categories`, {
         headers: {
             Authorization: `Bearer ${token}`
         }

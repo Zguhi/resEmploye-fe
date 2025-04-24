@@ -7,16 +7,10 @@ const getAuthToken = () => {
     return localStorage.getItem('authToken');
 };
 
-const getAll = (page = 0, limit = 10, sortBy = 'order_id', order = 'desc') => {
+const getAll = () => {
     const token = getAuthToken();
 
     return axios.get(API_URL, {
-        params: {
-            page,
-            limit,
-            sortBy,
-            order
-        },
         headers: {
             Authorization: `Bearer ${token}`
         }
