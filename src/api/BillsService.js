@@ -1,7 +1,7 @@
 import axios from 'axios';
 import {API_BASE_URL} from './axiosConfig.js';
 
-const API_URL = '${API_BASE_URL}:8088/api/orders';
+const API_URL = 'http://192.168.1.95:8080/api/orders';
 
 // Hàm lấy token từ localStorage (hoặc sessionStorage, hoặc state)
 const getAuthToken = () => {
