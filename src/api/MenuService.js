@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.95:8080/api/dishes';
+const API_URL = 'http://192.168.1.81:8080/api/dishes';
 
 // Hàm lấy token từ localStorage (hoặc sessionStorage, hoặc state)
 const getAuthToken = () => {
@@ -20,7 +20,7 @@ const getAll = () => {
 
 const getCategories = () => {
     const token = getAuthToken();
-    return axios.get(`http://192.168.1.95:8080/api/categories`, {
+    return axios.get(`http://192.168.1.81:8080/api/categories`, {
         headers: {
             Authorization: `Bearer ${token}`
         }

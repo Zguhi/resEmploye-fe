@@ -13,65 +13,100 @@ const MenuPage = () => {
         image_url: ''
     });
     const [editMenuItem, setEditMenuItem] = useState(null);
-    const [page, setPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         fetchMenuItems();
-        fetchCategories();
-    }, [page]);
+    }, []);
 
     // Lấy danh sách món ăn
     const fetchMenuItems = async () => {
         try {
+            setIsLoading(true);
             const response = await MenuService.getAll();
-            const data = response.data.data;
-            setMenuItems(data.content);
-            setTotalPages(data.totalPages);
-            console.log(response);
+            console.log('API response:', response);
+
+            // Dữ liệu API của bạn trả về mảng món ăn trực tiếp trong response.data
+            if (response.data && Array.isArray(response.data)) {
+                // Ánh xạ dữ liệu để phù hợp với cấu trúc cần thiết cho component
+                const mappedItems = response.data.map(item => ({
+                    dish_id: item.dishId,
+                    name: item.name,
+                    description: item.description,
+                    price: item.price,
+                    category_id: item.category.categoryId,
+                    image_url: item.imageUrl,
+                    created_at: item.createdAt
+                }));
+
+                setMenuItems(mappedItems);
+
+                // Trích xuất danh mục từ cùng dữ liệu API
+                const uniqueCategories = [...new Set(response.data.map(item => item.category.categoryId))]
+                    .map(categoryId => {
+                        const item = response.data.find(item => item.category.categoryId === categoryId);
+                        return {
+                            category_id: item.category.categoryId,
+                            name: item.category.name
+                        };
+                    });
+
+                setCategories(uniqueCategories);
+                console.log('Danh mục đã tải:', uniqueCategories);
+                setIsLoading(false);
+            } else {
+                console.error('Cấu trúc dữ liệu API không đúng như mong đợi:', response);
+                setError('Cấu trúc dữ liệu API không đúng như mong đợi');
+                setIsLoading(false);
+            }
         } catch (error) {
             console.error('Lỗi khi lấy danh sách món ăn:', error);
-        }
-    };
-    // const fetchMenuItems = async () => {
-    //     try {
-    //         const response = await MenuService.getAll();
-    //         if (response.data) {
-    //             setMenuItems(response.data);
-    //         } else {
-    //             console.error('Invalid API response:', response);
-    //         }
-    //     } catch (error) {
-    //         console.error('Error fetching menu items:', error);
-    //     }
-    // };
-
-    // Lấy danh sách danh mục
-    const fetchCategories = async () => {
-        try {
-            const response = await MenuService.getCategories();
-            setCategories(response.data.data || []);
-            console.log(response);
-        } catch (error) {
-            console.error('Lỗi khi lấy danh sách danh mục:', error);
+            setError(error.message || 'Đã xảy ra lỗi khi tải dữ liệu');
+            setIsLoading(false);
         }
     };
 
     // Thêm món ăn mới
     const handleAddMenuItem = async () => {
-        if (newMenuItem.name.trim() === '') return;
+        if (newMenuItem.name.trim() === '') {
+            alert('Vui lòng nhập tên món ăn');
+            return;
+        }
+
+        if (!newMenuItem.price) {
+            alert('Vui lòng nhập giá món ăn');
+            return;
+        }
+
+        if (!newMenuItem.category_id) {
+            alert('Vui lòng chọn danh mục');
+            return;
+        }
 
         try {
-            const user = JSON.parse(localStorage.getItem('user'));
-            const restaurantId = user.user_id; // Nếu người dùng là nhà hàng
 
+
+
+            // Đảm bảo category_id là số nguyên
+            const categoryId = parseInt(newMenuItem.category_id, 10);
+
+            // Chuyển đổi dữ liệu để phù hợp với API
             const menuItemToAdd = {
-                ...newMenuItem,
-                restaurant_id: restaurantId
+                name: newMenuItem.name,
+                price: Number(newMenuItem.price),
+                categoryId: categoryId, // Đảm bảo đây là số và sử dụng đúng tên trường API
+                description: newMenuItem.description || '', // Tránh gửi null
+                imageUrl: newMenuItem.image_url || '', // Tránh gửi null
             };
 
-            await MenuService.add(menuItemToAdd);
+            console.log('Dữ liệu gửi đi khi thêm món ăn:', menuItemToAdd);
+
+            const response = await MenuService.add(menuItemToAdd);
+            console.log('Kết quả thêm món ăn:', response);
+
+            // Reset form
             setNewMenuItem({
                 name: '',
                 price: '',
@@ -79,19 +114,44 @@ const MenuPage = () => {
                 description: '',
                 image_url: ''
             });
+
+            // Tải lại danh sách món ăn
             fetchMenuItems();
             setIsModalOpen(false);
         } catch (err) {
             console.error('Lỗi khi thêm món ăn:', err);
+            alert('Có lỗi xảy ra khi thêm món ăn: ' + (err.message || 'Lỗi không xác định'));
         }
     };
 
     // Cập nhật món ăn
     const handleUpdate = async () => {
-        if (!editMenuItem.name.trim()) return;
+        if (!editMenuItem.name.trim()) {
+            alert('Tên món ăn không được để trống');
+            return;
+        }
 
         try {
-            const response = await MenuService.update(editMenuItem);
+            // Đảm bảo category_id là số nguyên
+            const categoryId = parseInt(editMenuItem.category_id, 10);
+            if (isNaN(categoryId)) {
+                alert('Danh mục không hợp lệ');
+                return;
+            }
+
+            // Chuyển đổi định dạng dữ liệu cho API
+            const itemToUpdate = {
+                dishId: editMenuItem.dish_id,
+                name: editMenuItem.name,
+                price: Number(editMenuItem.price),
+                categoryId: categoryId, // Sử dụng tên trường API đúng
+                description: editMenuItem.description || '',
+                imageUrl: editMenuItem.image_url || ''
+            };
+
+            console.log('Dữ liệu gửi đi khi cập nhật món ăn:', itemToUpdate);
+
+            const response = await MenuService.update(itemToUpdate);
 
             if (response.status === 200) {
                 console.log('Cập nhật thành công:', response.data);
@@ -99,9 +159,11 @@ const MenuPage = () => {
                 fetchMenuItems();
             } else {
                 console.error('Cập nhật không thành công:', response);
+                alert('Cập nhật không thành công');
             }
         } catch (err) {
             console.error('Lỗi khi cập nhật món ăn:', err);
+            alert('Có lỗi xảy ra khi cập nhật món ăn: ' + (err.message || 'Lỗi không xác định'));
         }
     };
 
@@ -113,6 +175,7 @@ const MenuPage = () => {
                 fetchMenuItems();
             } catch (err) {
                 console.error('Lỗi khi xóa món ăn:', err);
+                alert('Có lỗi xảy ra khi xóa món ăn: ' + (err.message || 'Lỗi không xác định'));
             }
         }
     };
@@ -145,6 +208,20 @@ const MenuPage = () => {
                 Thêm Món ăn
             </button>
 
+            {/* Trạng thái tải */}
+            {isLoading && (
+                <div className="mt-4 text-center">
+                    <p className="text-gray-600">Đang tải dữ liệu...</p>
+                </div>
+            )}
+
+            {/* Thông báo lỗi */}
+            {error && (
+                <div className="mt-4 p-3 bg-red-100 text-red-700 rounded">
+                    <p>Lỗi: {error}</p>
+                </div>
+            )}
+
             {/* Modal Thêm Món ăn */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
@@ -152,7 +229,7 @@ const MenuPage = () => {
                         <h3 className="text-xl font-semibold mb-4 text-amber-700">Thêm Món ăn mới</h3>
                         <div className="space-y-3">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Tên món</label>
+                                <label className="block text-sm font-medium text-gray-700">Tên món <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
                                     placeholder="Tên món ăn"
@@ -163,7 +240,7 @@ const MenuPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Giá</label>
+                                <label className="block text-sm font-medium text-gray-700">Giá <span className="text-red-500">*</span></label>
                                 <input
                                     type="number"
                                     placeholder="Giá"
@@ -174,11 +251,14 @@ const MenuPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Danh mục</label>
+                                <label className="block text-sm font-medium text-gray-700">Danh mục <span className="text-red-500">*</span></label>
                                 <select
                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                                     value={newMenuItem.category_id}
-                                    onChange={(e) => setNewMenuItem({ ...newMenuItem, category_id: e.target.value })}
+                                    onChange={(e) => {
+                                        console.log('Danh mục đã chọn:', e.target.value);
+                                        setNewMenuItem({ ...newMenuItem, category_id: e.target.value });
+                                    }}
                                 >
                                     <option value="">-- Chọn danh mục --</option>
                                     {categories.map((cat) => (
@@ -187,6 +267,10 @@ const MenuPage = () => {
                                         </option>
                                     ))}
                                 </select>
+                                {/* Hiển thị giá trị đã chọn để debug */}
+                                <div className="mt-1 text-xs text-gray-500">
+                                    ID danh mục đã chọn: {newMenuItem.category_id || 'Chưa chọn'}
+                                </div>
                             </div>
 
                             <div>
@@ -231,134 +315,132 @@ const MenuPage = () => {
             )}
 
             {/* Bảng danh sách thực đơn */}
-            <div className="mt-6 overflow-x-auto">
-                <table className="w-full table-auto border-collapse">
-                    <thead>
-                    <tr className="bg-amber-50 text-left">
-                        <th className="border px-4 py-2">ID</th>
-                        <th className="border px-4 py-2">Tên món</th>
-                        <th className="border px-4 py-2">Danh mục</th>
-                        <th className="border px-4 py-2">Giá</th>
-                        <th className="border px-4 py-2">Mô tả</th>
-                        <th className="border px-4 py-2">Hành động</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {menuItems.map((item) => (
-                        <tr key={item.dish_id}>
-                            <td className="border px-4 py-2">{item.dish_id}</td>
-                            <td className="border px-4 py-2">
-                                {editMenuItem?.dish_id === item.dish_id ? (
-                                    <input
-                                        value={editMenuItem.name}
-                                        onChange={(e) => setEditMenuItem({ ...editMenuItem, name: e.target.value })}
-                                        className="border p-1 rounded w-full"
-                                    />
-                                ) : (
-                                    item.name
-                                )}
-                            </td>
-                            <td className="border px-4 py-2">
-                                {editMenuItem?.dish_id === item.dish_id ? (
-                                    <select
-                                        value={editMenuItem.category_id}
-                                        onChange={(e) => setEditMenuItem({ ...editMenuItem, category_id: e.target.value })}
-                                        className="border p-1 rounded w-full"
-                                    >
-                                        <option value="">-- Chọn danh mục --</option>
-                                        {categories.map((cat) => (
-                                            <option key={cat.category_id} value={cat.category_id}>
-                                                {cat.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    getCategoryName(item.category_id)
-                                )}
-                            </td>
-                            <td className="border px-4 py-2">
-                                {editMenuItem?.dish_id === item.dish_id ? (
-                                    <input
-                                        type="number"
-                                        value={editMenuItem.price}
-                                        onChange={(e) => setEditMenuItem({ ...editMenuItem, price: e.target.value })}
-                                        className="border p-1 rounded w-full"
-                                    />
-                                ) : (
-                                    formatPrice(item.price)
-                                )}
-                            </td>
-                            <td className="border px-4 py-2">
-                                {editMenuItem?.dish_id === item.dish_id ? (
-                                    <textarea
-                                        value={editMenuItem.description}
-                                        onChange={(e) => setEditMenuItem({ ...editMenuItem, description: e.target.value })}
-                                        className="border p-1 rounded w-full"
-                                        rows="2"
-                                    />
-                                ) : (
-                                    item.description
-                                )}
-                            </td>
-                            <td className="border px-4 py-2">
-                                {editMenuItem?.dish_id === item.dish_id ? (
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={handleUpdate}
-                                            className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
-                                        >
-                                            Lưu
-                                        </button>
-                                        <button
-                                            onClick={() => setEditMenuItem(null)}
-                                            className="bg-gray-400 text-white px-2 py-1 rounded hover:bg-gray-500"
-                                        >
-                                            Hủy
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => handleEdit(item)}
-                                            className="bg-amber-500 text-white px-2 py-1 rounded hover:bg-amber-600"
-                                        >
-                                            Sửa
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(item.dish_id)}
-                                            className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
-                                        >
-                                            Xóa
-                                        </button>
-                                    </div>
-                                )}
-                            </td>
+            {!isLoading && menuItems.length > 0 && (
+                <div className="mt-6 overflow-x-auto">
+                    <table className="w-full table-auto border-collapse">
+                        <thead>
+                        <tr className="bg-amber-50 text-left">
+                            <th className="border px-4 py-2">ID</th>
+                            <th className="border px-4 py-2">Ảnh</th>
+                            <th className="border px-4 py-2">Tên món</th>
+                            <th className="border px-4 py-2">Danh mục</th>
+                            <th className="border px-4 py-2">Giá</th>
+                            <th className="border px-4 py-2">Mô tả</th>
+                            <th className="border px-4 py-2">Hành động</th>
                         </tr>
-                    ))}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                        {menuItems.map((item) => (
+                            <tr key={item.dish_id}>
+                                <td className="border px-4 py-2">{item.dish_id}</td>
+                                <td className="border px-4 py-2">
+                                    {item.image_url && (
+                                        <img
+                                            src={item.image_url}
+                                            alt={item.name}
+                                            className="w-16 h-16 object-cover rounded"
+                                        />
+                                    )}
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {editMenuItem?.dish_id === item.dish_id ? (
+                                        <input
+                                            value={editMenuItem.name}
+                                            onChange={(e) => setEditMenuItem({ ...editMenuItem, name: e.target.value })}
+                                            className="border p-1 rounded w-full"
+                                        />
+                                    ) : (
+                                        item.name
+                                    )}
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {editMenuItem?.dish_id === item.dish_id ? (
+                                        <select
+                                            value={editMenuItem.category_id}
+                                            onChange={(e) => setEditMenuItem({ ...editMenuItem, category_id: e.target.value })}
+                                            className="border p-1 rounded w-full"
+                                        >
+                                            <option value="">-- Chọn danh mục --</option>
+                                            {categories.map((cat) => (
+                                                <option key={cat.category_id} value={cat.category_id}>
+                                                    {cat.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        getCategoryName(item.category_id)
+                                    )}
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {editMenuItem?.dish_id === item.dish_id ? (
+                                        <input
+                                            type="number"
+                                            value={editMenuItem.price}
+                                            onChange={(e) => setEditMenuItem({ ...editMenuItem, price: e.target.value })}
+                                            className="border p-1 rounded w-full"
+                                        />
+                                    ) : (
+                                        formatPrice(item.price)
+                                    )}
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {editMenuItem?.dish_id === item.dish_id ? (
+                                        <textarea
+                                            value={editMenuItem.description}
+                                            onChange={(e) => setEditMenuItem({ ...editMenuItem, description: e.target.value })}
+                                            className="border p-1 rounded w-full"
+                                            rows="2"
+                                        />
+                                    ) : (
+                                        item.description
+                                    )}
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {editMenuItem?.dish_id === item.dish_id ? (
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={handleUpdate}
+                                                className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+                                            >
+                                                Lưu
+                                            </button>
+                                            <button
+                                                onClick={() => setEditMenuItem(null)}
+                                                className="bg-gray-400 text-white px-2 py-1 rounded hover:bg-gray-500"
+                                            >
+                                                Hủy
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleEdit(item)}
+                                                className="bg-amber-500 text-white px-2 py-1 rounded hover:bg-amber-600"
+                                            >
+                                                Sửa
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(item.dish_id)}
+                                                className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
+                                            >
+                                                Xóa
+                                            </button>
+                                        </div>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
-            {/* Phân trang */}
-            <div className="flex justify-center mt-4 gap-2">
-                <button
-                    onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
-                    disabled={page === 0}
-                    className="bg-gray-300 px-3 py-1 rounded disabled:opacity-50"
-                >
-                    Trước
-                </button>
-                <span className="px-3 py-1">
-                    {page + 1} / {totalPages}
-                </span>
-                <button
-                    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages - 1))}
-                    disabled={page + 1 >= totalPages}
-                    className="bg-gray-300 px-3 py-1 rounded disabled:opacity-50"
-                >
-                    Sau
-                </button>
-            </div>
+            {/* Thông báo không có dữ liệu */}
+            {!isLoading && menuItems.length === 0 && !error && (
+                <div className="mt-6 p-4 bg-gray-100 rounded text-center">
+                    <p>Không có món ăn nào. Hãy thêm món ăn mới.</p>
+                </div>
+            )}
         </Layout>
     );
 };
