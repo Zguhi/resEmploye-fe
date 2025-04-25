@@ -29,7 +29,7 @@ const getCategories = () => {
 
 const add = (dish) => {
     const token = getAuthToken();
-
+    console.log(dish);
     // Đảm bảo format của dữ liệu phù hợp với API
     const dishData = {
         name: dish.name,
