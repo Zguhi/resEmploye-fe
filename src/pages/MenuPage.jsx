@@ -27,7 +27,6 @@ const MenuPage = () => {
         try {
             setIsLoading(true);
             const response = await MenuService.getAll();
-            console.log('API response:', response);
 
             // Dữ liệu API của bạn trả về mảng món ăn trực tiếp trong response.data
             if (response.data && Array.isArray(response.data)) {
