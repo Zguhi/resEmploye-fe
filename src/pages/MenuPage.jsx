@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../layouts/layout.jsx';
 import MenuService from '../api/MenuService.js';
+import {data} from "autoprefixer";
 
 const MenuPage = () => {
     const [menuItems, setMenuItems] = useState([]);
@@ -27,6 +28,7 @@ const MenuPage = () => {
             setIsLoading(true);
             const response = await MenuService.getAll();
             console.log('API response:', response);
+            console.log(data)
 
             // Dữ liệu API của bạn trả về mảng món ăn trực tiếp trong response.data
             if (response.data && Array.isArray(response.data)) {
