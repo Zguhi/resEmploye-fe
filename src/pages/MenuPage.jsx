@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../layouts/layout.jsx';
 import MenuService from '../api/MenuService.js';
-import {data} from "autoprefixer";
 
 const MenuPage = () => {
     const [menuItems, setMenuItems] = useState([]);

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import {API_BASE_URL} from './axiosConfig.js';
+//import {API_BASE_URL} from './axiosConfig.js';
 
 const API_URL = 'http://192.168.1.95:8080/api/orders';
 
@@ -8,16 +8,10 @@ const getAuthToken = () => {
     return localStorage.getItem('authToken');  // Hoặc bạn có thể thay đổi nơi lưu trữ token của bạn
 };
 
-const getAll = (page = 0, limit = 10, sortBy = 'order_id', order = 'desc') => {
+const getAll = () => {
     const token = getAuthToken();  // Lấy token từ nơi lưu trữ
 
     return axios.get(API_URL, {
-        params: {
-            page,
-            limit,
-            sortBy,
-            order
-        },
         headers: {
             Authorization: `Bearer ${token}`  // Thêm token vào header
         }

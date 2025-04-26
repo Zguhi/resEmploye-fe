@@ -113,7 +113,7 @@ const BillsPage = () => {
     const getCustomerInfo = (userId) => {
         // Trong thực tế, bạn có thể cần gọi API để lấy thông tin khách hàng
         // Hoặc cải thiện API để trả về thông tin khách hàng cùng với thông tin đơn hàng
-        return "Khách lẻ";
+        return (userId);
     };
 
     return (

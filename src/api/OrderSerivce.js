@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.179:8088/api/orders';
+const API_URL = 'http://192.168.1.95:8080/api/orders';
 
 // Hàm lấy token từ localStorage (hoặc sessionStorage, hoặc state)
 const getAuthToken = () => {

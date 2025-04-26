@@ -1,23 +1,16 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.179:8088/api/users';
+const API_URL = 'http://192.168.1.95:8080/api/users';
 
 // Hàm lấy token từ localStorage (hoặc sessionStorage, hoặc state)
 const getAuthToken = () => {
     return localStorage.getItem('authToken');  // Hoặc bạn có thể thay đổi nơi lưu trữ token của bạn
 };
 
-const getAll = (page = 0, limit = 10, sortBy = 'user_id', order = 'asc', role = 'Restaurant') => {
+const getAll = () => {
     const token = getAuthToken();  // Lấy token từ nơi lưu trữ
 
     return axios.get(API_URL, {
-        params: {
-            page,
-            limit,
-            sortBy,
-            order,
-            role // Chỉ lấy nhân viên
-        },
         headers: {
             Authorization: `Bearer ${token}`  // Thêm token vào header
         }

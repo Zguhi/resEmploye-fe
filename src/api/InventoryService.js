@@ -1,22 +1,16 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.179:8088/api/ingredients';
+const API_URL = 'http://192.168.1.95:8080/api/ingredients';
 
 // Hàm lấy token từ localStorage (hoặc sessionStorage, hoặc state)
 const getAuthToken = () => {
     return localStorage.getItem('authToken');
 };
 
-const getAll = (page = 0, limit = 10, sortBy = 'ingredient_id', order = 'asc') => {
+const getAll = () => {
     const token = getAuthToken();
 
     return axios.get(API_URL, {
-        params: {
-            page,
-            limit,
-            sortBy,
-            order
-        },
         headers: {
             Authorization: `Bearer ${token}`
         }
