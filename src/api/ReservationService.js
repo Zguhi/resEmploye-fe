@@ -2,21 +2,22 @@ import axios from 'axios';
 
 const API_URL = 'http://192.168.1.95:8080/api/reservations';
 
-// Hàm lấy token từ localStorage (hoặc sessionStorage, hoặc state)
+// Hàm lấy token từ localStorage
 const getAuthToken = () => {
-  return localStorage.getItem('authToken');  // Hoặc bạn có thể thay đổi nơi lưu trữ token của bạn
+  return localStorage.getItem('authToken');
 };
 
+// Lấy tất cả đặt bàn
 const getAll = () => {
-  const token = getAuthToken();  // Lấy token từ nơi lưu trữ
-
+  const token = getAuthToken();
   return axios.get(API_URL, {
     headers: {
-      Authorization: `Bearer ${token}`  // Thêm token vào header
+      Authorization: `Bearer ${token}`
     }
   });
 };
 
+// Lấy đặt bàn theo ID
 const getById = (id) => {
   const token = getAuthToken();
 
@@ -27,68 +28,61 @@ const getById = (id) => {
   });
 };
 
+// Thêm đặt bàn mới
 const add = (reservation) => {
-  const token = getAuthToken();  // Lấy token từ nơi lưu trữ
+  const token = getAuthToken();
 
-  // Format dữ liệu để phù hợp với API
+  // Cấu trúc dữ liệu phù hợp với ReservationRequestDto
   const reservationData = {
-    customerName: reservation.customerName,
-    phoneNumber: reservation.phone,
-    email: reservation.email,
-    reservationDate: reservation.date,
-    reservationTime: reservation.time,
-    numberOfGuests: reservation.guestCount,
-    tableNumber: reservation.tableNumber,
-    status: reservation.status || 'pending',
-    notes: reservation.notes
+    userId: reservation.userId, // ID người dùng (nếu có)
+    guestName: reservation.customerName || reservation.guestName,
+    guestPhone: reservation.phone || reservation.guestPhone,
+    guestEmail: reservation.email || reservation.guestEmail,
+    numberOfPeople: reservation.guestCount || reservation.numberOfPeople,
+    startTime: reservation.startTime ||
+        (reservation.date && reservation.time
+            ? new Date(`${reservation.date}T${reservation.time}`).toISOString()
+            : null),
+    notes: reservation.notes || ''
   };
 
   return axios.post(API_URL, reservationData, {
     headers: {
-      Authorization: `Bearer ${token}`  // Thêm token vào header
+      Authorization: `Bearer ${token}`
     }
   });
 };
 
+// Cập nhật đặt bàn
 const update = (reservation) => {
-  const token = getAuthToken();  // Lấy token từ nơi lưu trữ
+  const token = getAuthToken();
 
-  // Format dữ liệu để phù hợp với API
   const reservationData = {
-    id: reservation.id,
-    customerName: reservation.customerName,
-    phoneNumber: reservation.phone,
-    email: reservation.email,
-    reservationDate: reservation.date,
-    reservationTime: reservation.time,
-    numberOfGuests: reservation.guestCount,
-    tableNumber: reservation.tableNumber,
+    id: reservation.id || reservation.reservationId,
+    guestName: reservation.customerName || reservation.guestName,
+    guestPhone: reservation.phone || reservation.guestPhone,
+    guestEmail: reservation.email || reservation.guestEmail,
+    numberOfPeople: reservation.guestCount || reservation.numberOfPeople,
+    startTime: reservation.startTime ||
+        (reservation.date && reservation.time
+            ? new Date(`${reservation.date}T${reservation.time}`).toISOString()
+            : null),
     status: reservation.status,
-    notes: reservation.notes
+    notes: reservation.notes || ''
   };
 
   return axios.put(`${API_URL}/${reservationData.id}`, reservationData, {
     headers: {
-      Authorization: `Bearer ${token}`  // Thêm token vào header
+      Authorization: `Bearer ${token}`
     }
   });
 };
 
+// Xóa đặt bàn
 const deleteReservation = (id) => {
-  const token = getAuthToken();  // Lấy token từ nơi lưu trữ
-
-  return axios.delete(`${API_URL}/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`  // Thêm token vào header
-    }
-  });
-};
-
-// Lấy đặt bàn theo ngày
-const getByDate = (date) => {
   const token = getAuthToken();
 
-  return axios.get(`${API_URL}/date/${date}`, {
+  return axios.delete(`${API_URL}/${id}`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -99,7 +93,7 @@ const getByDate = (date) => {
 const confirmReservation = (id) => {
   const token = getAuthToken();
 
-  return axios.put(`${API_URL}/${id}/confirm`, {}, {
+  return axios.put(`${API_URL}/confirm/${id}`, {}, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -110,7 +104,7 @@ const confirmReservation = (id) => {
 const cancelReservation = (id) => {
   const token = getAuthToken();
 
-  return axios.put(`${API_URL}/${id}/cancel`, {}, {
+  return axios.patch(`${API_URL}/${id}/status`, { status: 'Cancelled' }, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -123,7 +117,6 @@ export default {
   add,
   update,
   delete: deleteReservation,
-  getByDate,
   confirmReservation,
   cancelReservation
 };

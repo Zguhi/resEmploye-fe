@@ -1,43 +1,48 @@
 import axios from 'axios';
-//import {API_BASE_URL} from './axiosConfig.js';
 
 const API_URL = 'http://192.168.1.95:8080/api/dishes';
+const CATEGORY_URL = 'http://192.168.1.95:8080/api/categories';
 
-// Hàm lấy token từ localStorage (hoặc sessionStorage, hoặc state)
+// Hàm lấy token từ localStorage
 const getAuthToken = () => {
-    return localStorage.getItem('authToken');  // Hoặc bạn có thể thay đổi nơi lưu trữ token của bạn
+    return localStorage.getItem('authToken');
 };
 
-const getAll = () => {
-    const token = getAuthToken();  // Lấy token từ nơi lưu trữ
+// Lấy tất cả các món ăn
+const getAll = (page = 0, size = 10, sortBy = 'dishId', sortDir = 'asc') => {
+    const token = getAuthToken();
 
     return axios.get(API_URL, {
-        headers: {
-            Authorization: `Bearer ${token}`  // Thêm token vào header
-        }
-    });
-};
-
-const getCategories = () => {
-    const token = getAuthToken();
-    return axios.get(`http://192.168.1.95:8080/api/categories`, {
+        params: { page, size, sortBy, sortDir },
         headers: {
             Authorization: `Bearer ${token}`
         }
     });
 };
 
+// Lấy tất cả danh mục
+const getCategories = () => {
+    const token = getAuthToken();
+
+    return axios.get(CATEGORY_URL, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+};
+
+// Thêm món ăn mới
 const add = (dish) => {
     const token = getAuthToken();
-    console.log(dish);
-    // Đảm bảo format của dữ liệu phù hợp với API
+
+    // Cấu trúc dữ liệu phù hợp với DishRequest trong backend
     const dishData = {
         name: dish.name,
-        description: dish.description,
+        description: dish.description || '',
         price: parseFloat(dish.price),
-        category_id: dish.category_id || null,
-        restaurant_id: dish.restaurant_id || null,
-        image_url: dish.image_url || null
+        imageUrl: dish.image_url || dish.imageUrl || '',
+        categoryId: dish.category_id || dish.categoryId,
+        restaurantId: dish.restaurant_id || 1 // Mặc định ID nhà hàng
     };
 
     return axios.post(API_URL, dishData, {
@@ -47,27 +52,29 @@ const add = (dish) => {
     });
 };
 
+// Cập nhật món ăn
 const update = (dish) => {
     const token = getAuthToken();
 
-    // Đảm bảo format của dữ liệu phù hợp với API
+    // Cấu trúc dữ liệu phù hợp với backend
     const dishData = {
-        dish_id: dish.dish_id || dish.id,
+        dishId: dish.dish_id || dish.dishId,
         name: dish.name,
-        description: dish.description,
+        description: dish.description || '',
         price: parseFloat(dish.price),
-        category_id: dish.category_id,
-        restaurant_id: dish.restaurant_id,
-        image_url: dish.image_url
+        imageUrl: dish.image_url || dish.imageUrl || '',
+        categoryId: dish.category_id || dish.categoryId,
+        restaurantId: dish.restaurant_id || 1 // Mặc định ID nhà hàng
     };
 
-    return axios.put(`${API_URL}/${dishData.dish_id}`, dishData, {
+    return axios.put(`${API_URL}/${dishData.dishId}`, dishData, {
         headers: {
             Authorization: `Bearer ${token}`
         }
     });
 };
 
+// Xóa món ăn
 const deleteDish = (id) => {
     const token = getAuthToken();
 

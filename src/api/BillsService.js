@@ -1,23 +1,25 @@
 import axios from 'axios';
-//import {API_BASE_URL} from './axiosConfig.js';
 
 const API_URL = 'http://192.168.1.95:8080/api/orders';
 
-// Hàm lấy token từ localStorage (hoặc sessionStorage, hoặc state)
+// Hàm lấy token từ localStorage
 const getAuthToken = () => {
-    return localStorage.getItem('authToken');  // Hoặc bạn có thể thay đổi nơi lưu trữ token của bạn
+    return localStorage.getItem('authToken');
 };
 
-const getAll = () => {
-    const token = getAuthToken();  // Lấy token từ nơi lưu trữ
+// Lấy tất cả hóa đơn
+const getAll = (page = 0, size = 10, sortBy = 'orderId', sortDir = 'desc') => {
+    const token = getAuthToken();
 
     return axios.get(API_URL, {
+        params: { page, size, sortBy, sortDir },
         headers: {
-            Authorization: `Bearer ${token}`  // Thêm token vào header
+            Authorization: `Bearer ${token}`
         }
     });
 };
 
+// Lấy hóa đơn theo ID
 const getById = (id) => {
     const token = getAuthToken();
 
@@ -28,41 +30,73 @@ const getById = (id) => {
     });
 };
 
-const add = (bill) => {
-    const token = getAuthToken();  // Lấy token từ nơi lưu trữ
+// Lấy chi tiết hóa đơn (các mục trong hóa đơn)
+const getBillDetails = (orderId) => {
+    const token = getAuthToken();
 
-    return axios.post(API_URL, bill, {
+    return axios.get(`${API_URL}/${orderId}/items`, {
         headers: {
-            Authorization: `Bearer ${token}`  // Thêm token vào header
+            Authorization: `Bearer ${token}`
         }
     });
 };
 
-const update = (bill) => {
-    const token = getAuthToken();  // Lấy token từ nơi lưu trữ
+// Thêm hóa đơn mới
+const add = (billData) => {
+    const token = getAuthToken();
 
-    return axios.put(`${API_URL}/${bill.order_id}`, bill, {
+    const processedBillData = {
+        userId: billData.userId,
+        tableId: billData.tableId,
+        items: billData.items.map(item => ({
+            dishId: item.dishId,
+            quantity: item.quantity
+        }))
+    };
+
+    return axios.post(API_URL, processedBillData, {
         headers: {
-            Authorization: `Bearer ${token}`  // Thêm token vào header
+            Authorization: `Bearer ${token}`
         }
     });
 };
 
+// Cập nhật hóa đơn
+const update = (billData) => {
+    const token = getAuthToken();
+
+    const processedBillData = {
+        orderId: billData.orderId || billData.order_id,
+        tableId: billData.tableId,
+        items: billData.items.map(item => ({
+            dishId: item.dishId,
+            quantity: item.quantity
+        }))
+    };
+
+    return axios.put(`${API_URL}/${processedBillData.orderId}`, processedBillData, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+};
+
+// Xóa hóa đơn
 const deleteBill = (id) => {
-    const token = getAuthToken();  // Lấy token từ nơi lưu trữ
+    const token = getAuthToken();
 
     return axios.delete(`${API_URL}/${id}`, {
         headers: {
-            Authorization: `Bearer ${token}`  // Thêm token vào header
+            Authorization: `Bearer ${token}`
         }
     });
 };
 
-// Lấy chi tiết hóa đơn
-const getBillDetails = (id) => {
+// Cập nhật trạng thái hóa đơn
+const updateStatus = (orderId, status) => {
     const token = getAuthToken();
 
-    return axios.get(`${API_URL}/${id}/items`, {
+    return axios.patch(`${API_URL}/${orderId}/status`, { status }, {
         headers: {
             Authorization: `Bearer ${token}`
         }
@@ -74,21 +108,7 @@ const getRevenue = (startDate, endDate) => {
     const token = getAuthToken();
 
     return axios.get(`${API_URL}/revenue`, {
-        params: {
-            startDate,
-            endDate
-        },
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-};
-
-// Cập nhật trạng thái đơn hàng
-const updateStatus = (orderId, status) => {
-    const token = getAuthToken();
-
-    return axios.put(`${API_URL}/${orderId}/status`, { status }, {
+        params: { startDate, endDate },
         headers: {
             Authorization: `Bearer ${token}`
         }
@@ -98,10 +118,10 @@ const updateStatus = (orderId, status) => {
 export default {
     getAll,
     getById,
+    getBillDetails,
     add,
     update,
     delete: deleteBill,
-    getBillDetails,
-    getRevenue,
-    updateStatus
+    updateStatus,
+    getRevenue
 };

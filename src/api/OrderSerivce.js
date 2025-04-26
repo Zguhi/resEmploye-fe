@@ -2,21 +2,24 @@ import axios from 'axios';
 
 const API_URL = 'http://192.168.1.95:8080/api/orders';
 
-// Hàm lấy token từ localStorage (hoặc sessionStorage, hoặc state)
+// Hàm lấy token từ localStorage
 const getAuthToken = () => {
     return localStorage.getItem('authToken');
 };
 
-const getAll = () => {
+// Lấy tất cả đơn hàng
+const getAll = (page = 0, size = 10, sortBy = 'orderId', sortDir = 'desc') => {
     const token = getAuthToken();
 
     return axios.get(API_URL, {
+        params: { page, size, sortBy, sortDir },
         headers: {
             Authorization: `Bearer ${token}`
         }
     });
 };
 
+// Lấy đơn hàng theo ID
 const getById = (id) => {
     const token = getAuthToken();
 
@@ -27,6 +30,7 @@ const getById = (id) => {
     });
 };
 
+// Lấy các mục trong đơn hàng
 const getOrderItems = (orderId) => {
     const token = getAuthToken();
 
@@ -37,26 +41,48 @@ const getOrderItems = (orderId) => {
     });
 };
 
+// Tạo đơn hàng mới
 const add = (orderData) => {
     const token = getAuthToken();
 
-    return axios.post(API_URL, orderData, {
+    // Cấu trúc dữ liệu phù hợp với OrderRequest
+    const processedOrderData = {
+        userId: orderData.userId,
+        tableId: orderData.tableId,
+        items: orderData.items.map(item => ({
+            dishId: item.dishId,
+            quantity: item.quantity
+        }))
+    };
+
+    return axios.post(API_URL, processedOrderData, {
         headers: {
             Authorization: `Bearer ${token}`
         }
     });
 };
 
+// Cập nhật đơn hàng
 const update = (orderData) => {
     const token = getAuthToken();
 
-    return axios.put(`${API_URL}/${orderData.order_id}`, orderData, {
+    const processedOrderData = {
+        orderId: orderData.orderId || orderData.order_id,
+        tableId: orderData.tableId,
+        items: orderData.items.map(item => ({
+            dishId: item.dishId,
+            quantity: item.quantity
+        }))
+    };
+
+    return axios.put(`${API_URL}/${processedOrderData.orderId}`, processedOrderData, {
         headers: {
             Authorization: `Bearer ${token}`
         }
     });
 };
 
+// Xóa đơn hàng
 const deleteOrder = (id) => {
     const token = getAuthToken();
 
@@ -71,14 +97,14 @@ const deleteOrder = (id) => {
 const updateStatus = (orderId, status) => {
     const token = getAuthToken();
 
-    return axios.put(`${API_URL}/${orderId}/status`, { status }, {
+    return axios.patch(`${API_URL}/${orderId}/status`, { status }, {
         headers: {
             Authorization: `Bearer ${token}`
         }
     });
 };
 
-// Thêm món ăn vào đơn hàng
+// Thêm mục vào đơn hàng
 const addOrderItem = (orderId, itemData) => {
     const token = getAuthToken();
 
@@ -89,7 +115,7 @@ const addOrderItem = (orderId, itemData) => {
     });
 };
 
-// Xóa món ăn khỏi đơn hàng
+// Xóa mục khỏi đơn hàng
 const removeOrderItem = (orderId, itemId) => {
     const token = getAuthToken();
 

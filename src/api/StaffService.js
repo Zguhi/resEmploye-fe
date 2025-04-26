@@ -10,7 +10,8 @@ const getAuthToken = () => {
 const getAll = () => {
     const token = getAuthToken();  // Lấy token từ nơi lưu trữ
 
-    return axios.get(API_URL, {
+    // Thêm các tham số phân trang vào URL
+    return axios.get(`${API_URL}`, {
         headers: {
             Authorization: `Bearer ${token}`  // Thêm token vào header
         }
@@ -35,14 +36,15 @@ const add = (staff) => {
         name: staff.name,
         email: staff.email,
         password_hash: staff.password || 'default_password', // Cần cung cấp mật khẩu mặc định
-        role: 'Restaurant', // Vai trò nhân viên nhà hàng
+        role: staff.role || 'Restaurant', // Vai trò nhân viên nhà hàng
         phone_number: staff.phone,
         address: staff.address
     };
 
     return axios.post(API_URL, staffData, {
         headers: {
-            Authorization: `Bearer ${token}`  // Thêm token vào header
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
         }
     });
 };
@@ -55,14 +57,15 @@ const update = (staff) => {
         user_id: staff.user_id || staff.id,
         name: staff.name,
         email: staff.email,
-        phone_number: staff.phone,
+        phone_number: staff.phone_number,
         address: staff.address,
         role: staff.role || 'Restaurant'
     };
 
     return axios.put(`${API_URL}/${staffData.user_id}`, staffData, {
         headers: {
-            Authorization: `Bearer ${token}`  // Thêm token vào header
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
         }
     });
 };
@@ -72,7 +75,7 @@ const deleteStaff = (id) => {
 
     return axios.delete(`${API_URL}/${id}`, {
         headers: {
-            Authorization: `Bearer ${token}`  // Thêm token vào header
+            Authorization: `Bearer ${token}`
         }
     });
 };
