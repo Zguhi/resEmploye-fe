@@ -13,25 +13,36 @@ const StaffPage = () => {
         role: 'Restaurant'
     });
     const [editStaff, setEditStaff] = useState(null);
-    const [page, setPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [apiMode, setApiMode] = useState('mock'); // 'mock' hoặc 'api'
 
     const positions = ['Quản lý', 'Đầu bếp', 'Phục vụ', 'Thu ngân', 'Tiếp tân', 'Giao hàng', 'Khác'];
     const roleOptions = ['Customer', 'Restaurant', 'Admin', 'Delivery'];
 
     useEffect(() => {
         fetchStaff();
-    }, [page]);
+    }, [apiMode]);
 
     // Lấy danh sách nhân viên
     const fetchStaff = async () => {
         setIsLoading(true);
         setError('');
+
+        // Sử dụng dữ liệu mẫu
+        if (apiMode === 'mock') {
+            console.log('Sử dụng dữ liệu mẫu');
+            setTimeout(() => {
+                setStaffList(getMockData());
+                setIsLoading(false);
+            }, 500);
+            return;
+        }
+
+        // Sử dụng API thực tế
         try {
-            // Kiểm tra token trước khi gọi API
+            // Kiểm tra token
             const token = localStorage.getItem('authToken');
             if (!token) {
                 setError('Không tìm thấy token xác thực. Vui lòng đăng nhập lại.');
@@ -39,56 +50,145 @@ const StaffPage = () => {
                 return;
             }
 
-            const response = await StaffService.getAll(page, 10, 'user_id', 'asc');
+            console.log('Đang gọi API...');
+            const response = await StaffService.getAll();
+            console.log('Phản hồi API:', response);
 
-            // Kiểm tra dữ liệu trả về
             if (response && response.data) {
-                // Điều chỉnh theo cấu trúc phản hồi API thực tế
-                if (response.data.data) {
-                    // Nếu API trả về dạng {data: {content: [...], totalPages: X}}
-                    setStaffList(response.data.data.content || []);
-                    setTotalPages(response.data.data.totalPages || 1);
-                } else if (Array.isArray(response.data)) {
-                    // Nếu API trả về trực tiếp một mảng
+                // Xác định cấu trúc dữ liệu và lấy danh sách nhân viên
+                if (Array.isArray(response.data)) {
                     setStaffList(response.data);
-                    setTotalPages(Math.ceil(response.data.length / 10));
+                } else if (response.data.content && Array.isArray(response.data.content)) {
+                    setStaffList(response.data.content);
+                } else if (response.data.data && Array.isArray(response.data.data)) {
+                    setStaffList(response.data.data);
+                } else if (response.data.data && response.data.data.content && Array.isArray(response.data.data.content)) {
+                    setStaffList(response.data.data.content);
                 } else {
-                    // Trường hợp khác
-                    console.log('Cấu trúc dữ liệu phản hồi:', response.data);
-                    setStaffList([]);
+                    console.log('Không nhận dạng được cấu trúc dữ liệu:', response.data);
                     setError('Cấu trúc dữ liệu không như mong đợi');
+                    setStaffList([]);
                 }
             } else {
+                setError('Không có dữ liệu');
                 setStaffList([]);
             }
         } catch (error) {
             console.error('Lỗi khi lấy danh sách nhân viên:', error);
-            setError('Không thể tải dữ liệu nhân viên. Vui lòng kiểm tra kết nối mạng và API.');
-
-            // Kiểm tra lỗi cụ thể
             if (error.response) {
-                // Lỗi từ server
+                // Có phản hồi từ server nhưng là lỗi
                 if (error.response.status === 401) {
                     setError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
                 } else if (error.response.status === 404) {
-                    setError('Không tìm thấy API. Vui lòng kiểm tra cấu hình.');
+                    setError('Không tìm thấy API (404). Vui lòng kiểm tra cấu hình.');
+                } else {
+                    setError(`Lỗi server: ${error.response.status}`);
                 }
+            } else if (error.request) {
+                // Không có phản hồi từ server
+                setError('Không nhận được phản hồi từ server. Kiểm tra kết nối mạng.');
+            } else {
+                // Lỗi khác
+                setError(`Lỗi: ${error.message}`);
             }
         } finally {
             setIsLoading(false);
         }
     };
 
+    // Tạo dữ liệu mẫu
+    const getMockData = () => {
+        return [
+            {
+                user_id: 1,
+                name: 'Nguyễn Văn A',
+                email: 'nguyenvana@example.com',
+                phone_number: '0901234567',
+                address: 'Hà Nội',
+                role: 'Restaurant',
+                created_at: '2023-01-15'
+            },
+            {
+                user_id: 2,
+                name: 'Trần Thị B',
+                email: 'tranthib@example.com',
+                phone_number: '0912345678',
+                address: 'TP. Hồ Chí Minh',
+                role: 'Admin',
+                created_at: '2023-02-20'
+            },
+            {
+                user_id: 3,
+                name: 'Lê Văn C',
+                email: 'levanc@example.com',
+                phone_number: '0898765432',
+                address: 'Đà Nẵng',
+                role: 'Delivery',
+                created_at: '2023-03-10'
+            },
+            {
+                user_id: 4,
+                name: 'Phạm Thị D',
+                email: 'phamthid@example.com',
+                phone_number: '0976543210',
+                address: 'Cần Thơ',
+                role: 'Restaurant',
+                created_at: '2023-04-05'
+            },
+            {
+                user_id: 5,
+                name: 'Hoàng Văn E',
+                email: 'hoangvane@example.com',
+                phone_number: '0923456789',
+                address: 'Nha Trang',
+                role: 'Restaurant',
+                created_at: '2023-05-15'
+            }
+        ];
+    };
+
     // Thêm nhân viên mới
     const handleAddStaff = async () => {
         if (newStaff.name.trim() === '' || newStaff.phone.trim() === '') {
-            alert('Vui lòng điền đầy đủ thông tin bắt buộc!');
+            alert('Vui lòng điền đầy đủ thông tin bắt buộc (tên và số điện thoại)!');
+            return;
+        }
+
+        setIsLoading(true);
+
+        if (apiMode === 'mock') {
+            // Thêm vào dữ liệu mẫu
+            setTimeout(() => {
+                const newId = Math.max(...staffList.map(s => s.user_id)) + 1;
+                const newStaffItem = {
+                    user_id: newId,
+                    name: newStaff.name,
+                    email: newStaff.email,
+                    phone_number: newStaff.phone,
+                    address: newStaff.address,
+                    role: newStaff.role,
+                    created_at: new Date().toISOString().split('T')[0]
+                };
+                setStaffList([...staffList, newStaffItem]);
+                setNewStaff({
+                    name: '',
+                    position: '',
+                    phone: '',
+                    email: '',
+                    address: '',
+                    role: 'Restaurant'
+                });
+                setIsModalOpen(false);
+                setIsLoading(false);
+            }, 500);
             return;
         }
 
         try {
-            setIsLoading(true);
-            await StaffService.add(newStaff);
+            const response = await StaffService.add(newStaff);
+            console.log('Thêm nhân viên thành công:', response);
+
+            // Reset form và tải lại dữ liệu
             setNewStaff({
                 name: '',
                 position: '',
@@ -101,7 +201,7 @@ const StaffPage = () => {
             setIsModalOpen(false);
         } catch (err) {
             console.error('Lỗi khi thêm nhân viên:', err);
-            alert('Không thể thêm nhân viên. ' + (err.response?.data?.message || 'Lỗi không xác định'));
+            alert('Không thể thêm nhân viên. ' + (err.response?.data?.message || err.message));
         } finally {
             setIsLoading(false);
         }
@@ -114,21 +214,28 @@ const StaffPage = () => {
             return;
         }
 
-        try {
-            setIsLoading(true);
-            const response = await StaffService.update(editStaff);
+        setIsLoading(true);
 
-            if (response.status === 200) {
-                console.log('Cập nhật thành công:', response.data);
+        if (apiMode === 'mock') {
+            // Cập nhật trong dữ liệu mẫu
+            setTimeout(() => {
+                const updatedList = staffList.map(staff =>
+                    staff.user_id === editStaff.user_id ? editStaff : staff);
+                setStaffList(updatedList);
                 setEditStaff(null);
-                fetchStaff();
-            } else {
-                console.error('Cập nhật không thành công:', response);
-                alert('Cập nhật không thành công');
-            }
+                setIsLoading(false);
+            }, 500);
+            return;
+        }
+
+        try {
+            const response = await StaffService.update(editStaff);
+            console.log('Cập nhật thành công:', response);
+            setEditStaff(null);
+            fetchStaff();
         } catch (err) {
             console.error('Lỗi khi cập nhật nhân viên:', err);
-            alert('Không thể cập nhật nhân viên. ' + (err.response?.data?.message || 'Lỗi không xác định'));
+            alert('Không thể cập nhật nhân viên. ' + (err.response?.data?.message || err.message));
         } finally {
             setIsLoading(false);
         }
@@ -136,17 +243,29 @@ const StaffPage = () => {
 
     // Xóa nhân viên
     const handleDelete = async (id) => {
-        if (window.confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) {
-            try {
-                setIsLoading(true);
-                await StaffService.delete(id);
-                fetchStaff();
-            } catch (err) {
-                console.error('Lỗi khi xóa nhân viên:', err);
-                alert('Không thể xóa nhân viên. ' + (err.response?.data?.message || 'Lỗi không xác định'));
-            } finally {
+        if (!window.confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) {
+            return;
+        }
+
+        setIsLoading(true);
+
+        if (apiMode === 'mock') {
+            // Xóa trong dữ liệu mẫu
+            setTimeout(() => {
+                setStaffList(staffList.filter(staff => staff.user_id !== id));
                 setIsLoading(false);
-            }
+            }, 500);
+            return;
+        }
+
+        try {
+            await StaffService.delete(id);
+            fetchStaff();
+        } catch (err) {
+            console.error('Lỗi khi xóa nhân viên:', err);
+            alert('Không thể xóa nhân viên. ' + (err.response?.data?.message || err.message));
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -173,9 +292,28 @@ const StaffPage = () => {
         }
     };
 
+    // Chuyển đổi chế độ API/Mock
+    const toggleApiMode = () => {
+        setApiMode(apiMode === 'mock' ? 'api' : 'mock');
+    };
+
     return (
         <Layout>
             <h2 className="text-2xl font-bold mb-4 text-amber-700">Quản lý Nhân viên</h2>
+
+            {/* Nút chuyển đổi giữa Mock Data và API */}
+            <div className="mb-4">
+                <button
+                    onClick={toggleApiMode}
+                    className={`px-4 py-2 rounded ${apiMode === 'mock'
+                        ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                        : 'bg-green-500 hover:bg-green-600 text-white'}`}
+                >
+                    {apiMode === 'mock'
+                        ? 'Đang dùng dữ liệu mẫu - Click để dùng API thật'
+                        : 'Đang dùng API thật - Click để dùng dữ liệu mẫu'}
+                </button>
+            </div>
 
             {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -189,7 +327,7 @@ const StaffPage = () => {
                 </div>
             )}
 
-            {/* Nút thêm nhân viên, mở Modal */}
+            {/* Nút thêm nhân viên */}
             <button
                 className="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700 disabled:opacity-50"
                 onClick={() => setIsModalOpen(true)}
@@ -424,35 +562,12 @@ const StaffPage = () => {
                         ))}
                         </tbody>
                     </table>
-                ) : !error ? (
+                ) : (
                     <div className="text-center py-4">
                         <p>Không có dữ liệu nhân viên</p>
                     </div>
-                ) : null}
+                )}
             </div>
-
-            {/* Phân trang */}
-            {totalPages > 1 && staffList.length > 0 && (
-                <div className="flex justify-center mt-4 gap-2">
-                    <button
-                        onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
-                        disabled={page === 0 || isLoading}
-                        className="bg-gray-300 px-3 py-1 rounded disabled:opacity-50"
-                    >
-                        Trước
-                    </button>
-                    <span className="px-3 py-1">
-                        {page + 1} / {totalPages}
-                    </span>
-                    <button
-                        onClick={() => setPage((prev) => Math.min(prev + 1, totalPages - 1))}
-                        disabled={page + 1 >= totalPages || isLoading}
-                        className="bg-gray-300 px-3 py-1 rounded disabled:opacity-50"
-                    >
-                        Sau
-                    </button>
-                </div>
-            )}
         </Layout>
     );
 };

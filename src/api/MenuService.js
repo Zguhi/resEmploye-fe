@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.95:8080/api/dishes';
-const CATEGORY_URL = 'http://192.168.1.95:8080/api/categories';
+const API_URL = 'http://192.168.1.137:8080/api/dishes';
+const CATEGORY_URL = 'http://192.168.1.137:8080/api/categories';
 
 // Hàm lấy token từ localStorage
 const getAuthToken = () => {

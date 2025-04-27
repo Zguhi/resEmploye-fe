@@ -1,26 +1,32 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.95:8080/api/users';
+// Địa chỉ API - cập nhật URL này theo cấu hình server của bạn
+const API_URL = 'http://192.168.1.137:8080/api/users';
 
-// Hàm lấy token từ localStorage (hoặc sessionStorage, hoặc state)
+// Hàm lấy token từ localStorage
 const getAuthToken = () => {
-    return localStorage.getItem('authToken');  // Hoặc bạn có thể thay đổi nơi lưu trữ token của bạn
+    return localStorage.getItem('authToken');
 };
 
+// Hàm lấy tất cả nhân viên
 const getAll = () => {
-    const token = getAuthToken();  // Lấy token từ nơi lưu trữ
+    const token = getAuthToken();
 
-    // Thêm các tham số phân trang vào URL
-    return axios.get(`${API_URL}`, {
+    console.log('Gọi API với URL:', API_URL);
+    console.log('Token tồn tại:', token ? 'Có' : 'Không');
+
+    return axios.get(API_URL, {
         headers: {
-            Authorization: `Bearer ${token}`  // Thêm token vào header
-        }
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        timeout: 10000,
     });
 };
 
+// Hàm lấy thông tin nhân viên theo ID
 const getById = (id) => {
     const token = getAuthToken();
-
     return axios.get(`${API_URL}/${id}`, {
         headers: {
             Authorization: `Bearer ${token}`
@@ -28,15 +34,16 @@ const getById = (id) => {
     });
 };
 
+// Hàm thêm nhân viên mới
 const add = (staff) => {
-    const token = getAuthToken();  // Lấy token từ nơi lưu trữ
+    const token = getAuthToken();
 
-    // Đảm bảo format của dữ liệu phù hợp với API
+    // Chuyển đổi dữ liệu để phù hợp với API
     const staffData = {
         name: staff.name,
         email: staff.email,
-        password_hash: staff.password || 'default_password', // Cần cung cấp mật khẩu mặc định
-        role: staff.role || 'Restaurant', // Vai trò nhân viên nhà hàng
+        password_hash: staff.password || 'default_password',
+        role: staff.role || 'Restaurant',
         phone_number: staff.phone,
         address: staff.address
     };
@@ -49,10 +56,10 @@ const add = (staff) => {
     });
 };
 
+// Hàm cập nhật thông tin nhân viên
 const update = (staff) => {
-    const token = getAuthToken();  // Lấy token từ nơi lưu trữ
+    const token = getAuthToken();
 
-    // Đảm bảo format của dữ liệu phù hợp với API
     const staffData = {
         user_id: staff.user_id || staff.id,
         name: staff.name,
@@ -70,9 +77,9 @@ const update = (staff) => {
     });
 };
 
+// Hàm xóa nhân viên
 const deleteStaff = (id) => {
-    const token = getAuthToken();  // Lấy token từ nơi lưu trữ
-
+    const token = getAuthToken();
     return axios.delete(`${API_URL}/${id}`, {
         headers: {
             Authorization: `Bearer ${token}`
