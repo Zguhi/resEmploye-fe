@@ -42,19 +42,21 @@ const MenuPage = () => {
 
                 setMenuItems(mappedItems);
 
-                // Trích xuất danh mục từ cùng dữ liệu API
-                const uniqueCategories = [...new Set(response.data.map(item => item.category.categoryId))]
-                    .map(categoryId => {
-                        const item = response.data.find(item => item.category.categoryId === categoryId);
-                        return {
-                            category_id: item.category.categoryId,
-                            name: item.category.name
-                        };
-                    });
+                // Thay thế bằng việc gọi API danh mục
+                try {
+                    const categoriesResponse = await MenuService.getCategories();
+                    const mappedCategories = categoriesResponse.data.map(category => ({
+                        category_id: category.categoryId,
+                        name: category.name
+                    }));
 
-                setCategories(uniqueCategories);
-                console.log('Danh mục đã tải:', uniqueCategories);
-                setIsLoading(false);
+                    setCategories(mappedCategories);
+                    console.log('Danh mục đã tải:', mappedCategories);
+                    setIsLoading(false);
+                } catch (error) {
+                    console.error('Lỗi khi tải danh mục:', error);
+                    setIsLoading(false);
+                }
             } else {
                 console.error('Cấu trúc dữ liệu API không đúng như mong đợi:', response);
                 setError('Cấu trúc dữ liệu API không đúng như mong đợi');
