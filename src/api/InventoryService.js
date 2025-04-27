@@ -1,6 +1,7 @@
 import axios from 'axios';
+import {API_BASE_URL} from "./axiosConfig.js";
 
-const API_URL = '${API_BASE_URL}/api/ingredients';
+const API_URL = `${API_BASE_URL}/api/ingredients`;
 
 // Hàm lấy token từ localStorage (hoặc sessionStorage, hoặc state)
 const getAuthToken = () => {
@@ -8,11 +9,13 @@ const getAuthToken = () => {
 };
 
 const getAll = () => {
-    const token = getAuthToken();
+    //const token = getAuthToken();
 
     return axios.get(API_URL, {
+        withCredentials: true,
         headers: {
-            Authorization: `Bearer ${token}`
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         }
     });
 };
@@ -84,12 +87,12 @@ const adjustQuantity = (id, quantity, reason) => {
 
 // Lấy lịch sử biến động nguyên liệu
 const getIngredientLogs = (ingredientId) => {
-    const token = getAuthToken();
+    //const token = getAuthToken();
 
     return axios.get(`${API_URL}/${ingredientId}/logs`, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
+        // headers: {
+        //     Authorization: `Bearer ${token}`
+        // }
     });
 };
 

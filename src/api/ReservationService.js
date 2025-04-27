@@ -1,6 +1,7 @@
 import axios from 'axios';
+import {API_BASE_URL} from "./axiosConfig.js";
 
-const API_URL = '${API_BASE_URL}/api/reservations';
+const API_URL = `${API_BASE_URL}/api/reservations`;
 
 // Hàm lấy token từ localStorage
 const getAuthToken = () => {
@@ -9,10 +10,12 @@ const getAuthToken = () => {
 
 // Lấy tất cả đặt bàn
 const getAll = () => {
-  const token = getAuthToken();
+  // const token = getAuthToken();
   return axios.get(API_URL, {
+    withCredentials: true,
     headers: {
-      Authorization: `Bearer ${token}`
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
     }
   });
 };
