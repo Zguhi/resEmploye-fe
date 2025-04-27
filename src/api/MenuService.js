@@ -59,19 +59,10 @@ const add = (dish) => {
 
 // Cập nhật món ăn
 const update = (dish) => {
-    //const token = getAuthToken();
+    console.log('URL update:', `${API_URL}/${dish.dishId}`);
+    console.log('Dữ liệu gửi lên:', JSON.stringify(dish, null, 2));
 
-    // Cấu trúc dữ liệu phù hợp với backend
-    const dishData = {
-        dishId: dish.dish_id || dish.dishId,
-        name: dish.name,
-        description: dish.description || '',
-        price: parseFloat(dish.price),
-        imageUrl: dish.image_url || dish.imageUrl || '',
-        categoryId: dish.category_id || dish.categoryId
-    };
-
-    return axios.put(`${API_URL}/${dishData.dishId}`, dishData, {
+    return axios.put(`${API_URL}/${dish.dishId}`, dish, {
         withCredentials: true,
         headers: {
             'Accept': 'application/json',

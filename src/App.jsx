@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
-import LoginForm from "./pages/LoginForm"; // Kích hoạt import
+import LoginForm from "./pages/LoginForm";
 import HomePage from "./pages/HomePage.jsx";
 import MenuPage from "./pages/MenuPage.jsx";
 import ReservationPage from "./pages/ReservationPage.jsx";
@@ -8,8 +8,8 @@ import StaffPage from "./pages/StaffPage.jsx";
 import InventoryPage from "./pages/InventoryPage.jsx";
 import BillsPage from "./pages/BillsPage.jsx";
 import Sidebar from "./components/Sidebar.jsx";
-import ProtectedRoute from "./components/ProtectedRoute"; // Kích hoạt import
-//import { isAuthenticated } from "./api/auth";
+import ProtectedRoute from "./components/ProtectedRoute";
+import ReservationNotification from "./pages/ReservationNotification.jsx"; // Đã cập nhật đường dẫn
 import './App.css'
 
 function App() {
@@ -23,6 +23,9 @@ function App() {
             {!isLoginPage && <Sidebar />}
 
             <main className={!isLoginPage ? "flex-1 ml-64 p-6" : "flex-1"}>
+                {/* Hiển thị thông báo đặt bàn chỉ khi đã đăng nhập */}
+                {!isLoginPage && <ReservationNotification />}
+
                 <Routes>
                     {/* Trang đăng nhập là route mặc định */}
                     <Route path="/" element={<LoginForm />} />

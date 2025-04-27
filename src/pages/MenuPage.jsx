@@ -133,6 +133,9 @@ const MenuPage = () => {
         }
 
         try {
+            // Log toàn bộ thông tin của editMenuItem
+            console.log('Thông tin chi tiết của editMenuItem:', JSON.stringify(editMenuItem, null, 2));
+
             // Đảm bảo category_id là số nguyên
             const categoryId = parseInt(editMenuItem.category_id, 10);
             if (isNaN(categoryId)) {
@@ -140,31 +143,41 @@ const MenuPage = () => {
                 return;
             }
 
-            // Chuyển đổi định dạng dữ liệu cho API
+            // Chuẩn bị dữ liệu update
             const itemToUpdate = {
                 dishId: editMenuItem.dish_id,
                 name: editMenuItem.name,
-                price: Number(editMenuItem.price),
-                categoryId: categoryId, // Sử dụng tên trường API đúng
                 description: editMenuItem.description || '',
+                price: parseFloat(editMenuItem.price),
+                categoryId: categoryId,
                 imageUrl: editMenuItem.image_url || ''
             };
 
-            console.log('Dữ liệu gửi đi khi cập nhật món ăn:', itemToUpdate);
+            console.log('Dữ liệu chuẩn bị gửi lên API:', JSON.stringify(itemToUpdate, null, 2));
 
-            const response = await MenuService.update(itemToUpdate);
+            try {
+                const response = await MenuService.update(itemToUpdate);
 
-            if (response.status === 200) {
-                console.log('Cập nhật thành công:', response.data);
-                setEditMenuItem(null);
-                fetchMenuItems();
-            } else {
-                console.error('Cập nhật không thành công:', response);
-                alert('Cập nhật không thành công');
+                // Log phản hồi từ server
+                console.log('Phản hồi từ server:', response);
+
+                // Kiểm tra trạng thái của phản hồi
+                if (response && response.status === 200) {
+                    console.log('Cập nhật thành công');
+                    setEditMenuItem(null);
+                    fetchMenuItems();
+                } else {
+                    console.error('Cập nhật không thành công:', response);
+                    alert('Cập nhật không thành công');
+                }
+            } catch (apiError) {
+                // Log chi tiết lỗi API
+                console.error('Chi tiết lỗi API:', apiError.response ? apiError.response.data : apiError);
+                alert('Lỗi khi gọi API: ' + (apiError.response?.data?.message || apiError.message));
             }
         } catch (err) {
-            console.error('Lỗi khi cập nhật món ăn:', err);
-            alert('Có lỗi xảy ra khi cập nhật món ăn: ' + (err.message || 'Lỗi không xác định'));
+            console.error('Lỗi xử lý:', err);
+            alert('Có lỗi xảy ra khi cập nhật món ăn');
         }
     };
 
