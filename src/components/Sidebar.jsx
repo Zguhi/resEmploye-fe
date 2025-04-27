@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { logout } from "../api/auth";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
     const [active, setActive] = useState("Dashboard");
@@ -35,6 +36,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         setActive(name);
         navigate(path);
         if (toggleSidebar) toggleSidebar();
+    };
+
+    // Xử lý đăng xuất
+    const handleLogout = () => {
+        logout(); // Xóa thông tin đăng nhập
+        navigate("/"); // Chuyển hướng về trang đăng nhập
     };
 
     return (
@@ -83,7 +90,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                     <Settings size={18} className="mr-2" />
                     Cài đặt
                 </button>
-                <button className="flex items-center text-sm text-gray-600 hover:text-amber-500">
+                <button
+                    className="flex items-center text-sm text-gray-600 hover:text-amber-500"
+                    onClick={handleLogout}
+                >
                     <LogOut size={18} className="mr-2" />
                     Đăng xuất
                 </button>

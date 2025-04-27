@@ -3,14 +3,8 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
-// Thêm dữ liệu người dùng giả tạm thời
-// TODO: Xóa dòng này khi đã sửa xong dữ liệu
-localStorage.setItem('authToken', 'fake-token-for-development');
-localStorage.setItem('user', JSON.stringify({
-    name: 'Admin',
-    role: 'admin',
-    email: 'admin@gerichtrestaurant.com'
-}));
+// Đã xóa dữ liệu người dùng mặc định để yêu cầu đăng nhập
+// Giờ ứng dụng sẽ hiển thị trang đăng nhập khi khởi động
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>

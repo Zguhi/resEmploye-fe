@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Địa chỉ API - cập nhật URL này theo cấu hình server của bạn
-const API_URL = 'http://192.168.1.137:8080/api/users';
+const API_URL = '${API_BASE_URL}/api/users';
 
 // Hàm lấy token từ localStorage
 const getAuthToken = () => {

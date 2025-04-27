@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.137:8080/api/ingredients';
+const API_URL = '${API_BASE_URL}/api/ingredients';
 
 // Hàm lấy token từ localStorage (hoặc sessionStorage, hoặc state)
 const getAuthToken = () => {
@@ -33,8 +33,7 @@ const add = (item) => {
     const ingredientData = {
         name: item.name,
         quantity: parseFloat(item.quantity),
-        unit: item.unit,
-        restaurant_id: item.restaurant_id || getCurrentRestaurantId()
+        unit: item.unit
     };
 
     return axios.post(API_URL, ingredientData, {
@@ -92,12 +91,6 @@ const getIngredientLogs = (ingredientId) => {
             Authorization: `Bearer ${token}`
         }
     });
-};
-
-// Lấy ID nhà hàng hiện tại (từ thông tin người dùng đã đăng nhập)
-const getCurrentRestaurantId = () => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    return user?.user_id;
 };
 
 export default {

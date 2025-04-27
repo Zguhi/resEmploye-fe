@@ -1,7 +1,8 @@
 import axios from 'axios';
+//import {API_BASE_URL} from "./axiosConfig.js";
 
-const API_URL = 'http://192.168.1.137:8080/api/dishes';
-const CATEGORY_URL = 'http://192.168.1.137:8080/api/categories';
+const API_URL = `https://included-sturgeon-cool.ngrok-free.app/api/dishes`;
+const CATEGORY_URL = 'https://included-sturgeon-cool.ngrok-free.app/api/categories';
 
 // Hàm lấy token từ localStorage
 const getAuthToken = () => {
@@ -10,13 +11,13 @@ const getAuthToken = () => {
 
 // Lấy tất cả các món ăn
 const getAll = (page = 0, size = 10, sortBy = 'dishId', sortDir = 'asc') => {
-    const token = getAuthToken();
+    // const token = getAuthToken();
 
     return axios.get(API_URL, {
         params: { page, size, sortBy, sortDir },
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
+        // headers: {
+        //     Authorization: `Bearer ${token}`
+        // }
     });
 };
 
@@ -41,8 +42,7 @@ const add = (dish) => {
         description: dish.description || '',
         price: parseFloat(dish.price),
         imageUrl: dish.image_url || dish.imageUrl || '',
-        categoryId: dish.category_id || dish.categoryId,
-        restaurantId: dish.restaurant_id || 1 // Mặc định ID nhà hàng
+        categoryId: dish.category_id || dish.categoryId
     };
 
     return axios.post(API_URL, dishData, {
@@ -63,8 +63,7 @@ const update = (dish) => {
         description: dish.description || '',
         price: parseFloat(dish.price),
         imageUrl: dish.image_url || dish.imageUrl || '',
-        categoryId: dish.category_id || dish.categoryId,
-        restaurantId: dish.restaurant_id || 1 // Mặc định ID nhà hàng
+        categoryId: dish.category_id || dish.categoryId
     };
 
     return axios.put(`${API_URL}/${dishData.dishId}`, dishData, {
