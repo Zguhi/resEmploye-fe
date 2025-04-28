@@ -4,9 +4,9 @@ import {API_BASE_URL} from "./axiosConfig.js";
 const API_URL = `${API_BASE_URL}/api/orders`;
 
 // Hàm lấy token từ localStorage
-const getAuthToken = () => {
-    return localStorage.getItem('authToken');
-};
+// const getAuthToken = () => {
+//     return localStorage.getItem('authToken');
+// };
 
 // Lấy tất cả đơn hàng
 const getAll = () => {
@@ -22,29 +22,33 @@ const getAll = () => {
 
 // Lấy đơn hàng theo ID
 const getById = (id) => {
-    const token = getAuthToken();
+    //const token = getAuthToken();
 
     return axios.get(`${API_URL}/${id}`, {
+        withCredentials: true,
         headers: {
-            Authorization: `Bearer ${token}`
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         }
     });
 };
 
 // Lấy các mục trong đơn hàng
 const getOrderItems = (orderId) => {
-    const token = getAuthToken();
+    //const token = getAuthToken();
 
     return axios.get(`${API_URL}/${orderId}/items`, {
+        withCredentials: true,
         headers: {
-            Authorization: `Bearer ${token}`
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         }
     });
 };
 
 // Tạo đơn hàng mới
 const add = (orderData) => {
-    const token = getAuthToken();
+    //const token = getAuthToken();
 
     // Cấu trúc dữ liệu phù hợp với OrderRequest
     const processedOrderData = {
@@ -57,15 +61,17 @@ const add = (orderData) => {
     };
 
     return axios.post(API_URL, processedOrderData, {
+        withCredentials: true,
         headers: {
-            Authorization: `Bearer ${token}`
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         }
     });
 };
 
 // Cập nhật đơn hàng
 const update = (orderData) => {
-    const token = getAuthToken();
+    //const token = getAuthToken();
 
     const processedOrderData = {
         orderId: orderData.orderId || orderData.order_id,
@@ -77,52 +83,62 @@ const update = (orderData) => {
     };
 
     return axios.put(`${API_URL}/${processedOrderData.orderId}`, processedOrderData, {
+        withCredentials: true,
         headers: {
-            Authorization: `Bearer ${token}`
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         }
     });
 };
 
 // Xóa đơn hàng
 const deleteOrder = (id) => {
-    const token = getAuthToken();
+    //const token = getAuthToken();
 
     return axios.delete(`${API_URL}/${id}`, {
+        withCredentials: true,
         headers: {
-            Authorization: `Bearer ${token}`
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         }
     });
 };
 
 // Cập nhật trạng thái đơn hàng
 const updateStatus = (orderId, status) => {
-    const token = getAuthToken();
+    //const token = getAuthToken();
 
     return axios.patch(`${API_URL}/${orderId}/status`, { status }, {
+        withCredentials: true,
         headers: {
-            Authorization: `Bearer ${token}`
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         }
     });
 };
 
 // Thêm mục vào đơn hàng
 const addOrderItem = (orderId, itemData) => {
-    const token = getAuthToken();
+    //const token = getAuthToken();
 
     return axios.post(`${API_URL}/${orderId}/items`, itemData, {
+        withCredentials: true,
         headers: {
-            Authorization: `Bearer ${token}`
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         }
     });
 };
 
 // Xóa mục khỏi đơn hàng
 const removeOrderItem = (orderId, itemId) => {
-    const token = getAuthToken();
+    //const token = getAuthToken();
 
     return axios.delete(`${API_URL}/${orderId}/items/${itemId}`, {
+        withCredentials: true,
         headers: {
-            Authorization: `Bearer ${token}`
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         }
     });
 };
