@@ -2,27 +2,23 @@ import {
     LayoutDashboard,
     Utensils,
     CalendarDays,
-    Users,
     Package,
     Receipt,
     Clock,
     Contact,
     Settings,
-    LogOut,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { logout } from "../api/auth";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
     const [active, setActive] = useState("Dashboard");
     const navigate = useNavigate();
 
     const menu = [
-        { name: "Dashboard", icon: <LayoutDashboard size={20} />, path: "/home" },
+        { name: "Dashboard", icon: <LayoutDashboard size={20} />, path: "/" },
         { name: "Thực đơn", icon: <Utensils size={20} />, path: "/menu" },
         { name: "Đặt bàn", icon: <CalendarDays size={20} />, path: "/reservation" },
-        { name: "Nhân viên", icon: <Users size={20} />, path: "/staff" },
         { name: "Kho nguyên liệu", icon: <Package size={20} />, path: "/inventory" },
         { name: "Hóa đơn", icon: <Receipt size={20} />, path: "/bills" },
     ];
@@ -36,12 +32,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         setActive(name);
         navigate(path);
         if (toggleSidebar) toggleSidebar();
-    };
-
-    // Xử lý đăng xuất
-    const handleLogout = () => {
-        logout(); // Xóa thông tin đăng nhập
-        navigate("/"); // Chuyển hướng về trang đăng nhập
     };
 
     return (
@@ -85,17 +75,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 ))}
             </nav>
 
-            <div className="px-4 py-3 border-t flex flex-col space-y-2">
+            <div className="px-4 py-3 border-t">
                 <button className="flex items-center text-sm text-gray-600 hover:text-amber-500">
                     <Settings size={18} className="mr-2" />
                     Cài đặt
-                </button>
-                <button
-                    className="flex items-center text-sm text-gray-600 hover:text-amber-500"
-                    onClick={handleLogout}
-                >
-                    <LogOut size={18} className="mr-2" />
-                    Đăng xuất
                 </button>
             </div>
         </div>
