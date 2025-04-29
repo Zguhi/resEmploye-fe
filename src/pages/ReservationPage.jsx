@@ -14,6 +14,7 @@ const ReservationPage = () => {
   const [selectedTableId, setSelectedTableId] = useState(null);
   const [loadingTables, setLoadingTables] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const [tableInfo, setTableInfo] = useState({});
 
   useEffect(() => {
     fetchReservations();
@@ -26,6 +27,15 @@ const ReservationPage = () => {
       const data = response.data;
       const reservationList = Array.isArray(data) ? data :
           (data.content || data.data || []);
+
+      // Tạo một mảng các ID đặt bàn đã xác nhận để lấy thông tin bàn
+      const confirmedReservations = reservationList.filter(res => res.status === 'Confirmed');
+      const reservationIds = confirmedReservations.map(res => res.id || res.reservationId);
+
+      if (reservationIds.length > 0) {
+        await fetchTablesForReservations(reservationIds);
+      }
+
       setReservations(reservationList);
       setError(null);
     } catch (error) {
@@ -34,6 +44,35 @@ const ReservationPage = () => {
       setReservations([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchTablesForReservations = async (reservationIds) => {
+    try {
+      // Lấy thông tin bàn cho các đặt bàn đã xác nhận
+      const tableInfoMap = {};
+
+      for (const reservationId of reservationIds) {
+        try {
+          const response = await axios.get(`${API_BASE_URL}/api/reservations/${reservationId}/table`, {
+            withCredentials: true,
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (response.data) {
+            tableInfoMap[reservationId] = response.data;
+          }
+        } catch (err) {
+          console.log(`Không thể lấy thông tin bàn cho đặt bàn ${reservationId}:`, err);
+        }
+      }
+
+      setTableInfo(tableInfoMap);
+    } catch (error) {
+      console.error('Lỗi khi lấy thông tin bàn:', error);
     }
   };
 
@@ -101,6 +140,16 @@ const ReservationPage = () => {
           'Content-Type': 'application/json'
         }
       });
+
+      // Cập nhật thông tin bàn trong state
+      const tableData = tables.find(t => (t.id || t.tableId) === selectedTableId);
+      if (tableData) {
+        setTableInfo(prev => ({
+          ...prev,
+          [reservationId]: tableData
+        }));
+      }
+
       setShowTableSelection(false);
       await fetchReservations();
     } catch (error) {
@@ -119,6 +168,14 @@ const ReservationPage = () => {
     try {
       setIsLoading(true);
       await ReservationService.cancelReservation(id);
+      // Xóa thông tin bàn khi hủy đặt bàn
+      if (tableInfo[id]) {
+        setTableInfo(prev => {
+          const newTableInfo = {...prev};
+          delete newTableInfo[id];
+          return newTableInfo;
+        });
+      }
       fetchReservations();
     } catch (error) {
       console.error('Lỗi khi hủy đặt bàn:', error);
@@ -165,6 +222,11 @@ const ReservationPage = () => {
     }
   };
 
+  // Lấy thông tin bàn dựa trên ID đặt bàn
+  const getTableForReservation = (reservationId) => {
+    return tableInfo[reservationId];
+  };
+
   return (
       <Layout>
         <h2 className="text-2xl font-bold mb-4 text-amber-700">Quản lý Đặt bàn</h2>
@@ -192,6 +254,7 @@ const ReservationPage = () => {
                   <th className="border px-4 py-2">Email</th>
                   <th className="border px-4 py-2">Thời gian</th>
                   <th className="border px-4 py-2">Số người</th>
+                  <th className="border px-4 py-2">Bàn</th>
                   <th className="border px-4 py-2">Ghi chú</th>
                   <th className="border px-4 py-2">Trạng thái</th>
                   <th className="border px-4 py-2">Hành động</th>
@@ -199,56 +262,68 @@ const ReservationPage = () => {
                 </thead>
                 <tbody>
                 {reservations.length > 0 ? (
-                    reservations.map((reservation) => (
-                        <tr key={reservation.id || reservation.reservationId}>
-                          <td className="border px-4 py-2">{reservation.id || reservation.reservationId}</td>
-                          <td className="border px-4 py-2">{reservation.guestName || reservation.customerName}</td>
-                          <td className="border px-4 py-2">{reservation.guestPhone}</td>
-                          <td className="border px-4 py-2">{reservation.guestEmail || '-'}</td>
-                          <td className="border px-4 py-2">{formatDate(reservation.startTime)}</td>
-                          <td className="border px-4 py-2">{reservation.numberOfGuests || '-'}</td>
-                          <td className="border px-4 py-2">{reservation.notes || '-'}</td>
-                          <td className="border px-4 py-2">
-                                        <span className={`px-2 py-1 rounded-full text-xs ${getStatusClass(reservation.status)}`}>
-                                            {getStatusDisplay(reservation.status)}
-                                        </span>
-                          </td>
-                          <td className="border px-4 py-2">
-                            <div className="flex gap-2 flex-wrap">
-                              {reservation.status === 'Pending' && (
-                                  <>
+                    reservations.map((reservation) => {
+                      const reservationId = reservation.id || reservation.reservationId;
+                      const table = getTableForReservation(reservationId);
+
+                      return (
+                          <tr key={reservationId}>
+                            <td className="border px-4 py-2">{reservationId}</td>
+                            <td className="border px-4 py-2">{reservation.guestName || reservation.customerName}</td>
+                            <td className="border px-4 py-2">{reservation.guestPhone}</td>
+                            <td className="border px-4 py-2">{reservation.guestEmail || '-'}</td>
+                            <td className="border px-4 py-2">{formatDate(reservation.startTime)}</td>
+                            <td className="border px-4 py-2">{reservation.numberOfGuests || '-'}</td>
+                            <td className="border px-4 py-2">
+                              {reservation.status === 'Confirmed'
+                                  ? (table
+                                      ? `Bàn số ${table.table_number || table.tableNumber || table.id || table.tableId}`
+                                      : 'Chưa gán bàn')
+                                  : '-'}
+                            </td>
+                            <td className="border px-4 py-2">{reservation.notes || '-'}</td>
+                            <td className="border px-4 py-2">
+                            <span className={`px-2 py-1 rounded-full text-xs ${getStatusClass(reservation.status)}`}>
+                                {getStatusDisplay(reservation.status)}
+                            </span>
+                            </td>
+                            <td className="border px-4 py-2">
+                              <div className="flex gap-2 flex-wrap">
+                                {reservation.status === 'Pending' && (
+                                    <>
+                                      <button
+                                          onClick={() => handleConfirmReservation(reservation)}
+                                          className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+                                      >
+                                        Xác nhận
+                                      </button>
+                                      <button
+                                          onClick={() => handleCancelReservation(reservationId)}
+                                          className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                                      >
+                                        Hủy
+                                      </button>
+                                    </>
+                                )}
+                                {reservation.status === 'Confirmed' && (
                                     <button
-                                        onClick={() => handleConfirmReservation(reservation)}
-                                        className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
-                                    >
-                                      Xác nhận
-                                    </button>
-                                    <button
-                                        onClick={() => handleCancelReservation(reservation.id || reservation.reservationId)}
+                                        onClick={() => handleCancelReservation(reservationId)}
                                         className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
                                     >
                                       Hủy
                                     </button>
-                                  </>
-                              )}
-                              {reservation.status === 'Confirmed' && (
-                                  <button
-                                      onClick={() => handleCancelReservation(reservation.id || reservation.reservationId)}
-                                      className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-                                  >
-                                    Hủy
-                                  </button>
-                              )}
-                              {reservation.status === 'Cancelled' && (
-                                  <span className="text-gray-500 text-sm">Không khả dụng</span>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                    ))
+                                )}
+                                {reservation.status === 'Cancelled' && (
+                                    <span className="text-gray-500 text-sm">Không khả dụng</span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                      );
+                    })
                 ) : (
                     <tr>
-                      <td colSpan="9" className="text-center py-4 border">
+                      <td colSpan="10" className="text-center py-4 border">
                         Không có đặt bàn nào
                       </td>
                     </tr>
@@ -283,7 +358,7 @@ const ReservationPage = () => {
                                   : 'hover:bg-gray-100'}`}
                               onClick={() => setSelectedTableId(table.id || table.tableId)}
                           >
-                            <h4 className="font-bold">{table.name}</h4>
+                            <h4 className="font-bold">Bàn số {table.table_number || table.tableNumber || table.id || table.tableId}</h4>
                             <p>Sức chứa: {table.capacity} người</p>
                             {table.location && <p>Vị trí: {table.location}</p>}
                           </div>
