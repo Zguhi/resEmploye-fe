@@ -15,6 +15,7 @@ const ReservationPage = () => {
   const [loadingTables, setLoadingTables] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [tableInfo, setTableInfo] = useState({});
+  const [detailedError, setDetailedError] = useState(null);
 
   useEffect(() => {
     fetchReservations();
@@ -28,6 +29,8 @@ const ReservationPage = () => {
       const reservationList = Array.isArray(data) ? data :
           (data.content || data.data || []);
 
+      console.log('Danh sách đặt bàn:', reservationList);
+
       // Tạo một mảng các ID đặt bàn đã xác nhận để lấy thông tin bàn
       const confirmedReservations = reservationList.filter(res => res.status === 'Confirmed');
       const reservationIds = confirmedReservations.map(res => res.id || res.reservationId);
@@ -38,9 +41,11 @@ const ReservationPage = () => {
 
       setReservations(reservationList);
       setError(null);
+      setDetailedError(null);
     } catch (error) {
       console.error('Lỗi khi lấy danh sách đặt bàn:', error);
       setError(error.message || 'Không thể tải danh sách đặt bàn');
+      setDetailedError(error.response ? JSON.stringify(error.response.data, null, 2) : null);
       setReservations([]);
     } finally {
       setIsLoading(false);
@@ -49,7 +54,6 @@ const ReservationPage = () => {
 
   const fetchTablesForReservations = async (reservationIds) => {
     try {
-      // Lấy thông tin bàn cho các đặt bàn đã xác nhận
       const tableInfoMap = {};
 
       for (const reservationId of reservationIds) {
@@ -62,15 +66,20 @@ const ReservationPage = () => {
             }
           });
 
+          console.log(`Thông tin bàn cho đặt bàn ${reservationId}:`, response.data);
+
           if (response.data) {
             tableInfoMap[reservationId] = response.data;
           }
         } catch (err) {
-          console.log(`Không thể lấy thông tin bàn cho đặt bàn ${reservationId}:`, err);
+          console.error(`Chi tiết lỗi cho đặt bàn ${reservationId}:`,
+              err.response ? JSON.stringify(err.response.data, null, 2) : err.message
+          );
         }
       }
 
       setTableInfo(tableInfoMap);
+      console.log('Bảng thông tin bàn:', tableInfoMap);
     } catch (error) {
       console.error('Lỗi khi lấy thông tin bàn:', error);
     }
@@ -95,9 +104,11 @@ const ReservationPage = () => {
       const tableList = Array.isArray(data) ? data :
           (data.content || data.data || []);
       setTables(tableList);
+      console.log('Danh sách bàn khả dụng:', tableList);
     } catch (error) {
       console.error('Lỗi khi lấy danh sách bàn khả dụng:', error);
       setTables([]);
+      setDetailedError(error.response ? JSON.stringify(error.response.data, null, 2) : null);
       alert('Không thể lấy danh sách bàn khả dụng. Vui lòng thử lại sau.');
     } finally {
       setLoadingTables(false);
@@ -154,6 +165,7 @@ const ReservationPage = () => {
       await fetchReservations();
     } catch (error) {
       console.error('Lỗi khi xác nhận đặt bàn:', error);
+      setDetailedError(error.response ? JSON.stringify(error.response.data, null, 2) : null);
       alert('Không thể xác nhận đặt bàn. Vui lòng thử lại sau.');
     } finally {
       setIsLoading(false);
@@ -179,6 +191,7 @@ const ReservationPage = () => {
       fetchReservations();
     } catch (error) {
       console.error('Lỗi khi hủy đặt bàn:', error);
+      setDetailedError(error.response ? JSON.stringify(error.response.data, null, 2) : null);
       alert('Không thể hủy đặt bàn. Vui lòng thử lại sau.');
     } finally {
       setIsLoading(false);
@@ -227,9 +240,29 @@ const ReservationPage = () => {
     return tableInfo[reservationId];
   };
 
+  // Hàm trợ giúp render thông tin bàn
+  const renderTableInfo = (reservation) => {
+    if (!reservation) return 'Chưa có thông tin bàn';
+
+    // Truy cập tableNumber từ đối tượng table của reservation
+    const tableNumber = reservation.table?.tableNumber ||
+        reservation.table?.table_number ||
+        'Chưa xác định';
+
+    return `Bàn ${tableNumber}`;
+  };
+
   return (
       <Layout>
         <h2 className="text-2xl font-bold mb-4 text-amber-700">Quản lý Đặt bàn</h2>
+
+        {/* Hiển thị lỗi chi tiết nếu có */}
+        {detailedError && (
+            <div className="bg-red-100 text-red-700 p-4 rounded mb-4">
+              <p>Lỗi chi tiết:</p>
+              <pre className="text-xs overflow-x-auto">{detailedError}</pre>
+            </div>
+        )}
 
         {isLoading && (
             <div className="text-center py-4">
@@ -251,7 +284,6 @@ const ReservationPage = () => {
                   <th className="border px-4 py-2">ID</th>
                   <th className="border px-4 py-2">Tên khách hàng</th>
                   <th className="border px-4 py-2">Số điện thoại</th>
-                  <th className="border px-4 py-2">Email</th>
                   <th className="border px-4 py-2">Thời gian</th>
                   <th className="border px-4 py-2">Số người</th>
                   <th className="border px-4 py-2">Bàn</th>
@@ -264,42 +296,39 @@ const ReservationPage = () => {
                 {reservations.length > 0 ? (
                     reservations.map((reservation) => {
                       const reservationId = reservation.id || reservation.reservationId;
-                      const table = getTableForReservation(reservationId);
+                      //const table = getTableForReservation(reservationId);
 
                       return (
                           <tr key={reservationId}>
                             <td className="border px-4 py-2">{reservationId}</td>
                             <td className="border px-4 py-2">{reservation.guestName || reservation.customerName}</td>
                             <td className="border px-4 py-2">{reservation.guestPhone}</td>
-                            <td className="border px-4 py-2">{reservation.guestEmail || '-'}</td>
                             <td className="border px-4 py-2">{formatDate(reservation.startTime)}</td>
                             <td className="border px-4 py-2">{reservation.numberOfGuests || '-'}</td>
                             <td className="border px-4 py-2">
                               {reservation.status === 'Confirmed'
-                                  ? (table
-                                      ? `Bàn số ${table.table_number || table.tableNumber || table.id || table.tableId}`
-                                      : 'Chưa gán bàn')
+                                  ? renderTableInfo(reservation)
                                   : '-'}
                             </td>
                             <td className="border px-4 py-2">{reservation.notes || '-'}</td>
                             <td className="border px-4 py-2">
-                            <span className={`px-2 py-1 rounded-full text-xs ${getStatusClass(reservation.status)}`}>
+                              <span className={`px-2 py-1 rounded-full text-xs ${getStatusClass(reservation.status)}`}>
                                 {getStatusDisplay(reservation.status)}
-                            </span>
+                              </span>
                             </td>
                             <td className="border px-4 py-2">
-                              <div className="flex gap-2 flex-wrap">
+                              <div className="flex gap-2 justify-center">
                                 {reservation.status === 'Pending' && (
                                     <>
                                       <button
-                                          onClick={() => handleConfirmReservation(reservation)}
+                                          onClick={() => handleOpenTableSelection(reservation)}
                                           className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
                                       >
                                         Xác nhận
                                       </button>
                                       <button
                                           onClick={() => handleCancelReservation(reservationId)}
-                                          className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                                          className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
                                       >
                                         Hủy
                                       </button>
@@ -308,13 +337,10 @@ const ReservationPage = () => {
                                 {reservation.status === 'Confirmed' && (
                                     <button
                                         onClick={() => handleCancelReservation(reservationId)}
-                                        className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                                        className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
                                     >
                                       Hủy
                                     </button>
-                                )}
-                                {reservation.status === 'Cancelled' && (
-                                    <span className="text-gray-500 text-sm">Không khả dụng</span>
                                 )}
                               </div>
                             </td>
@@ -333,6 +359,7 @@ const ReservationPage = () => {
             </div>
         )}
 
+        {/* Modal chọn bàn */}
         {showTableSelection && selectedReservation && (
             <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
               <div className="bg-white p-6 rounded-lg w-4/5 max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -391,6 +418,7 @@ const ReservationPage = () => {
             </div>
         )}
 
+        {/* Modal thông báo */}
         {showNotification && (
             <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
               <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
