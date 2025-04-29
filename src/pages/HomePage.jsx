@@ -1,14 +1,100 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../layouts/layout.jsx';
 import { getCurrentUser } from '../api/auth.js';
+import ReservationService from '../api/ReservationService.js';
+import BillsService from '../api/BillsService.js';
 
 const HomePage = () => {
     const [user, setUser] = useState(null);
+    const [reservationsToday, setReservationsToday] = useState(0);
+    const [pendingReservations, setPendingReservations] = useState(0);
+    const [todayRevenue, setTodayRevenue] = useState(0);
+    const [recentReservations, setRecentReservations] = useState([]);
+    const [todayOrders, setTodayOrders] = useState(0);
+    const [processingOrders, setProcessingOrders] = useState(0);
 
     useEffect(() => {
         const userInfo = getCurrentUser();
         setUser(userInfo);
+
+        fetchTodayReservations();
+        fetchTodayRevenue();
+        fetchRecentReservations();
+        fetchTodayOrders();
     }, []);
+
+    const fetchTodayReservations = async () => {
+        try {
+            const response = await ReservationService.getAll();
+            const today = new Date().toISOString().split('T')[0];
+
+            const todayReservations = response.data.filter(res =>
+                new Date(res.startTime).toISOString().split('T')[0] === today
+            );
+
+            const pendingReservations = todayReservations.filter(res => res.status === 'Pending');
+
+            setReservationsToday(todayReservations.length);
+            setPendingReservations(pendingReservations.length);
+        } catch (error) {
+            console.error('Lỗi khi lấy danh sách đặt bàn:', error);
+        }
+    };
+
+    const fetchTodayRevenue = async () => {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const response = await BillsService.getRevenue(today, today);
+            setTodayRevenue(response.data.data.totalRevenue || 0);
+        } catch (error) {
+            console.error('Lỗi khi lấy doanh thu:', error);
+        }
+    };
+
+    const fetchRecentReservations = async () => {
+        try {
+            const response = await ReservationService.getAll();
+            const sortedReservations = response.data
+                .sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
+                .slice(0, 3);
+            setRecentReservations(sortedReservations);
+        } catch (error) {
+            console.error('Lỗi khi lấy đặt bàn mới nhất:', error);
+        }
+    };
+
+    const fetchTodayOrders = async () => {
+        try {
+            const response = await BillsService.getAll();
+            const today = new Date().toISOString().split('T')[0];
+
+            const todayOrders = response.data.filter(order =>
+                new Date(order.created_at).toISOString().split('T')[0] === today
+            );
+
+            const processingOrders = todayOrders.filter(order =>
+                ['Pending', 'Preparing', 'Delivering'].includes(order.order_status)
+            );
+
+            setTodayOrders(todayOrders.length);
+            setProcessingOrders(processingOrders.length);
+        } catch (error) {
+            console.error('Lỗi khi lấy danh sách đơn hàng:', error);
+        }
+    };
+
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    };
+
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            day: '2-digit',
+            month: '2-digit'
+        });
+    };
 
     return (
         <Layout>
@@ -23,20 +109,20 @@ const HomePage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
                     <div className="bg-amber-50 p-6 rounded-lg shadow-sm border border-amber-100">
                         <h2 className="text-lg font-bold text-amber-800 mb-3">Đặt bàn hôm nay</h2>
-                        <p className="text-amber-700 text-2xl font-bold">12</p>
-                        <p className="text-gray-600 text-sm mt-1">3 chờ xác nhận</p>
+                        <p className="text-amber-700 text-2xl font-bold">{reservationsToday}</p>
+                        <p className="text-gray-600 text-sm mt-1">{pendingReservations} chờ xác nhận</p>
                     </div>
 
                     <div className="bg-green-50 p-6 rounded-lg shadow-sm border border-green-100">
                         <h2 className="text-lg font-bold text-green-800 mb-3">Doanh thu hôm nay</h2>
-                        <p className="text-green-700 text-2xl font-bold">8.540.000 đ</p>
-                        <p className="text-gray-600 text-sm mt-1">+15% so với hôm qua</p>
+                        <p className="text-green-700 text-2xl font-bold">{formatCurrency(todayRevenue)}</p>
+                        <p className="text-gray-600 text-sm mt-1">So với hôm qua</p>
                     </div>
 
                     <div className="bg-blue-50 p-6 rounded-lg shadow-sm border border-blue-100">
                         <h2 className="text-lg font-bold text-blue-800 mb-3">Tổng đơn hàng</h2>
-                        <p className="text-blue-700 text-2xl font-bold">24</p>
-                        <p className="text-gray-600 text-sm mt-1">4 đang xử lý</p>
+                        <p className="text-blue-700 text-2xl font-bold">{todayOrders}</p>
+                        <p className="text-gray-600 text-sm mt-1">{processingOrders} đang xử lý</p>
                     </div>
                 </div>
 
@@ -54,27 +140,35 @@ const HomePage = () => {
                             </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                            <tr>
-                                <td className="py-2 px-4">Nguyễn Văn A</td>
-                                <td className="py-2 px-4">0912345678</td>
-                                <td className="py-2 px-4">18:30 - 20/04/2025</td>
-                                <td className="py-2 px-4">4</td>
-                                <td className="py-2 px-4"><span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">Chờ xác nhận</span></td>
-                            </tr>
-                            <tr>
-                                <td className="py-2 px-4">Trần Thị B</td>
-                                <td className="py-2 px-4">0987654321</td>
-                                <td className="py-2 px-4">19:00 - 20/04/2025</td>
-                                <td className="py-2 px-4">2</td>
-                                <td className="py-2 px-4"><span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Đã xác nhận</span></td>
-                            </tr>
-                            <tr>
-                                <td className="py-2 px-4">Lê Văn C</td>
-                                <td className="py-2 px-4">0976543210</td>
-                                <td className="py-2 px-4">12:30 - 21/04/2025</td>
-                                <td className="py-2 px-4">6</td>
-                                <td className="py-2 px-4"><span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Đã xác nhận</span></td>
-                            </tr>
+                            {recentReservations.length > 0 ? (
+                                recentReservations.map((reservation) => (
+                                    <tr key={reservation.id || reservation.reservationId}>
+                                        <td className="py-2 px-4">{reservation.guestName || reservation.customerName}</td>
+                                        <td className="py-2 px-4">{reservation.guestPhone}</td>
+                                        <td className="py-2 px-4">{formatDate(reservation.startTime)}</td>
+                                        <td className="py-2 px-4">{reservation.numberOfGuests}</td>
+                                        <td className="py-2 px-4">
+                                            <span className={`px-2 py-1 rounded-full text-xs ${
+                                                reservation.status === 'Confirmed'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : reservation.status === 'Pending'
+                                                        ? 'bg-yellow-100 text-yellow-800'
+                                                        : 'bg-red-100 text-red-800'
+                                            }`}>
+                                                {reservation.status === 'Confirmed'
+                                                    ? 'Đã xác nhận'
+                                                    : reservation.status === 'Pending'
+                                                        ? 'Chờ xác nhận'
+                                                        : 'Đã hủy'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="5" className="text-center py-4">Không có đặt bàn mới</td>
+                                </tr>
+                            )}
                             </tbody>
                         </table>
                     </div>

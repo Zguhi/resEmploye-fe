@@ -89,10 +89,9 @@ const ReservationPage = () => {
     try {
       setLoadingTables(true);
       const startTime = new Date(reservationTime).toISOString();
-      const response = await axios.get(`${API_BASE_URL}/api/tables/status/available`, {
+      const response = await axios.get(`${API_BASE_URL}/api/tables`, {
         params: {
-          startTime,
-          guestCount: numberOfGuests
+          status: 'Available'
         },
         withCredentials: true,
         headers: {
@@ -103,8 +102,15 @@ const ReservationPage = () => {
       const data = response.data;
       const tableList = Array.isArray(data) ? data :
           (data.content || data.data || []);
-      setTables(tableList);
-      console.log('Danh sách bàn khả dụng:', tableList);
+
+      // Lọc bàn có sức chứa lớn hơn hoặc bằng số người đặt
+      const filteredTables = tableList.filter(table =>
+          // Kiểm tra sức chứa bàn, đảm bảo có thuộc tính capacity
+          table.capacity && table.capacity >= numberOfGuests
+      );
+
+      setTables(filteredTables);
+      console.log('Danh sách bàn khả dụng:', filteredTables);
     } catch (error) {
       console.error('Lỗi khi lấy danh sách bàn khả dụng:', error);
       setTables([]);
@@ -210,7 +216,7 @@ const ReservationPage = () => {
   };
 
   const getStatusClass = (status) => {
-    switch (status) {
+    switch(status) {
       case 'Confirmed':
         return 'bg-green-100 text-green-800';
       case 'Pending':
@@ -223,7 +229,7 @@ const ReservationPage = () => {
   };
 
   const getStatusDisplay = (status) => {
-    switch (status) {
+    switch(status) {
       case 'Confirmed':
         return 'Đã xác nhận';
       case 'Pending':
@@ -296,7 +302,6 @@ const ReservationPage = () => {
                 {reservations.length > 0 ? (
                     reservations.map((reservation) => {
                       const reservationId = reservation.id || reservation.reservationId;
-                      //const table = getTableForReservation(reservationId);
 
                       return (
                           <tr key={reservationId}>
@@ -312,9 +317,9 @@ const ReservationPage = () => {
                             </td>
                             <td className="border px-4 py-2">{reservation.notes || '-'}</td>
                             <td className="border px-4 py-2">
-                              <span className={`px-2 py-1 rounded-full text-xs ${getStatusClass(reservation.status)}`}>
-                                {getStatusDisplay(reservation.status)}
-                              </span>
+                        <span className={`px-2 py-1 rounded-full text-xs ${getStatusClass(reservation.status)}`}>
+                          {getStatusDisplay(reservation.status)}
+                        </span>
                             </td>
                             <td className="border px-4 py-2">
                               <div className="flex gap-2 justify-center">
@@ -350,7 +355,7 @@ const ReservationPage = () => {
                 ) : (
                     <tr>
                       <td colSpan="10" className="text-center py-4 border">
-                        Không có đặt bàn nào
+                        Không có đặt bàn
                       </td>
                     </tr>
                 )}
@@ -380,7 +385,7 @@ const ReservationPage = () => {
                           <div
                               key={table.id || table.tableId}
                               className={`border p-4 rounded-lg cursor-pointer transition-colors 
-                                            ${selectedTableId === (table.id || table.tableId)
+                      ${selectedTableId === (table.id || table.tableId)
                                   ? 'bg-amber-100 border-amber-500'
                                   : 'hover:bg-gray-100'}`}
                               onClick={() => setSelectedTableId(table.id || table.tableId)}
