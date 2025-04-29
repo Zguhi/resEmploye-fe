@@ -2,103 +2,59 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ReservationService from '../api/ReservationService.js';
 
-// Sử dụng localStorage để lưu trữ ID đặt bàn đã thông báo
-// Điều này giúp duy trì trạng thái giữa các lần refresh trang
-const getNotifiedIds = () => {
-    const saved = localStorage.getItem('notifiedReservationIds');
-    return saved ? JSON.parse(saved) : [];
-};
-
-const saveNotifiedIds = (ids) => {
-    localStorage.setItem('notifiedReservationIds', JSON.stringify(ids));
-};
-
 const ReservationNotification = () => {
     const [showNotification, setShowNotification] = useState(false);
     const [pendingCount, setPendingCount] = useState(0);
-    const [newReservationIds, setNewReservationIds] = useState([]);
     const navigate = useNavigate();
     const location = useLocation();
+    const [dismissed, setDismissed] = useState(false);
 
-    // Chỉ chạy một lần khi component mount
     useEffect(() => {
-        // Kiểm tra nếu không ở trang đặt bàn
-        if (location.pathname !== '/reservation') {
-            checkNewReservations();
+        // Nếu đã từng bấm "Để sau" hoặc đang ở trang reservation thì không hiện thông báo
+        if (dismissed || location.pathname === '/reservation') {
+            return;
         }
 
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        const checkReservations = async () => {
+            try {
+                const response = await ReservationService.getAll();
+                const reservations = response.data;
 
-    // Kiểm tra khi đường dẫn thay đổi
-    useEffect(() => {
-        // Nếu đang ở trang đặt bàn, ẩn thông báo
-        if (location.pathname === '/reservation') {
-            setShowNotification(false);
-        }
-    }, [location.pathname]);
-
-    const checkNewReservations = async () => {
-        try {
-            const response = await ReservationService.getAll();
-
-            // Xử lý dữ liệu
-            const data = response.data;
-            const reservationList = Array.isArray(data) ? data :
-                (data.content || data.data || []);
-
-            // Lọc các đặt bàn đang chờ xác nhận
-            const pendingReservations = reservationList.filter(
-                reservation => reservation.status === 'Pending'
-            );
-
-            // Nếu có đặt bàn chờ xác nhận
-            if (pendingReservations.length > 0) {
-                // Lấy các ID đặt bàn đang chờ
-                const pendingIds = pendingReservations.map(res =>
-                    res.id || res.reservationId
+                // Lọc các đặt bàn đang chờ xác nhận
+                const pendingReservations = reservations.filter(
+                    res => res.status === 'Pending'
                 );
 
-                // Lấy danh sách ID đã thông báo trước đó
-                const notifiedIds = getNotifiedIds();
-
-                // Tìm các ID mới chưa được thông báo
-                const newIds = pendingIds.filter(id => !notifiedIds.includes(id));
-
-                // Nếu có đặt bàn mới
-                if (newIds.length > 0) {
+                if (pendingReservations.length > 0) {
                     setPendingCount(pendingReservations.length);
-                    setNewReservationIds(newIds);
                     setShowNotification(true);
-
-                    // Lưu các ID đã thông báo
-                    saveNotifiedIds([...notifiedIds, ...newIds]);
                 }
+            } catch (error) {
+                console.error('Lỗi khi kiểm tra đặt bàn:', error);
             }
-        } catch (error) {
-            console.error('Lỗi khi kiểm tra đặt bàn:', error);
-        }
-    };
+        };
+
+        checkReservations();
+    }, [location.pathname, dismissed]);
 
     const handleViewReservations = () => {
         setShowNotification(false);
         navigate('/reservation');
     };
 
-    // Đóng thông báo và ghi nhớ rằng đã thấy thông báo này
     const handleDismiss = () => {
+        setDismissed(true);
         setShowNotification(false);
     };
 
-    // Không hiển thị nếu không có thông báo hoặc đang ở trang đặt bàn
-    if (!showNotification || location.pathname === '/reservation' || newReservationIds.length === 0) {
-        return null;
-    }
+    if (!showNotification) return null;
 
     return (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg w-96 shadow-xl">
-                <h3 className="text-xl font-semibold text-amber-700 mb-3">Thông báo đặt bàn mới</h3>
+                <h3 className="text-xl font-semibold text-amber-700 mb-3">
+                    Thông báo đặt bàn mới
+                </h3>
                 <p className="mb-5">Có {pendingCount} đặt bàn đang chờ xác nhận!</p>
                 <div className="flex justify-end gap-3">
                     <button
