@@ -47,27 +47,27 @@ const getOrderItems = (orderId) => {
 };
 
 // Tạo đơn hàng mới
-const add = (orderData) => {
-    //const token = getAuthToken();
-
-    // Cấu trúc dữ liệu phù hợp với OrderRequest
-    const processedOrderData = {
-        userId: orderData.userId,
-        tableId: orderData.tableId,
-        items: orderData.items.map(item => ({
-            dishId: item.dishId,
-            quantity: item.quantity
-        }))
-    };
-
-    return axios.post(API_URL, processedOrderData, {
-        withCredentials: true,
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
-    });
-};
+// const add = (orderData) => {
+//     //const token = getAuthToken();
+//
+//     // Cấu trúc dữ liệu phù hợp với OrderRequest
+//     const processedOrderData = {
+//         userId: orderData.userId,
+//         tableId: orderData.tableId,
+//         items: orderData.items.map(item => ({
+//             dishId: item.dishId,
+//             quantity: item.quantity
+//         }))
+//     };
+//
+//     return axios.post(API_URL, processedOrderData, {
+//         withCredentials: true,
+//         headers: {
+//             'Accept': 'application/json',
+//             'Content-Type': 'application/json'
+//         }
+//     });
+// };
 
 // Cập nhật đơn hàng
 const update = (orderData) => {
@@ -147,7 +147,6 @@ export default {
     getAll,
     getById,
     getOrderItems,
-    add,
     update,
     delete: deleteOrder,
     updateStatus,

@@ -100,12 +100,6 @@ const HomePage = () => {
         <Layout>
             <div className="bg-white p-6 rounded-lg shadow-md">
                 <h1 className="text-2xl font-bold text-amber-700 mb-4">Chào mừng đến với Quản lý Gericht Restaurant</h1>
-                {user && (
-                    <p className="text-gray-700 mb-4">
-                        Xin chào, <span className="font-semibold">{user.name}</span>!
-                    </p>
-                )}
-
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
                     <div className="bg-amber-50 p-6 rounded-lg shadow-sm border border-amber-100">
                         <h2 className="text-lg font-bold text-amber-800 mb-3">Đặt bàn hôm nay</h2>

@@ -1,6 +1,7 @@
 import axios from 'axios';
+import {API_BASE_URL} from "./axiosConfig.js";
 
-const API_URL = '${API_BASE_URL}/api/orders';
+const API_URL = `${API_BASE_URL}/api/orders`;
 
 // Hàm lấy token từ localStorage
 // const getAuthToken = () => {
