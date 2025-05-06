@@ -5,7 +5,6 @@ import BillsService from '../api/BillsService.js';
 const BillsPage = () => {
     const [bills, setBills] = useState([]);
     const [selectedBill, setSelectedBill] = useState(null);
-    const [billDetails, setBillDetails] = useState([]);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -15,19 +14,28 @@ const BillsPage = () => {
 
     useEffect(() => {
         fetchBills();
-    }, [page]);
+    }, [page, startDate, endDate]);
 
     // Lấy danh sách hóa đơn
     const fetchBills = async () => {
         try {
-            const response = await BillsService.getAll(page, 10, 'orderId', 'desc', 'Completed');
+            const response = await BillsService.getAll(page, 10, 'orderId', 'desc', 'Completed', startDate, endDate);
             const data = response.data;
 
-            // Kiểm tra nếu data là một mảng
-            if (Array.isArray(data)) {
-                setBills(data);
+            // Kiểm tra nếu data là một mảng và có phần tử đầu tiên
+            if (Array.isArray(data) && data.length > 0) {
+                // Lấy phần tử đầu tiên của mảng
+                const firstItem = data[0];
+
+                // Kiểm tra nếu phần tử đầu tiên có thuộc tính 'orderId'
+                if (Object.prototype.hasOwnProperty.call(firstItem, 'orderId')) {
+                    setBills(data);
+                } else {
+                    console.error('Dữ liệu trả về không có thuộc tính "orderId":', data);
+                    setBills([]);
+                }
             } else {
-                console.error('Dữ liệu trả về không đúng định dạng mảng:', data);
+                console.error('Dữ liệu trả về không đúng định dạng mảng hoặc mảng rỗng:', data);
                 setBills([]);
             }
 
@@ -37,20 +45,9 @@ const BillsPage = () => {
         }
     };
 
-    // Lấy chi tiết hóa đơn
-    const fetchBillDetails = async (id) => {
-        try {
-            const response = await BillsService.getBillDetails(id);
-            setBillDetails(response.data.data);
-        } catch (error) {
-            console.error('Lỗi khi lấy chi tiết hóa đơn:', error);
-        }
-    };
-
     // Xem chi tiết hóa đơn
-    const handleViewDetails = async (bill) => {
+    const handleViewDetails = (bill) => {
         setSelectedBill(bill);
-        await fetchBillDetails(bill.orderId);
         setIsModalOpen(true);
     };
 
@@ -82,17 +79,21 @@ const BillsPage = () => {
 
     // Lấy trạng thái hiển thị
     const getStatusDisplay = (status) => {
-        switch(status) {
-            case 'Completed': return 'Hoàn thành';
-            default: return status;
+        switch (status) {
+            case 'Completed':
+                return 'Hoàn thành';
+            default:
+                return status;
         }
     };
 
     // Lấy màu hiển thị trạng thái
     const getStatusColor = (status) => {
-        switch(status) {
-            case 'Completed': return 'bg-green-100 text-green-800';
-            default: return 'bg-gray-100 text-gray-800';
+        switch (status) {
+            case 'Completed':
+                return 'bg-green-100 text-green-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
         }
     };
 
@@ -154,9 +155,8 @@ const BillsPage = () => {
                     <thead>
                     <tr className="bg-amber-50 text-left">
                         <th className="border px-4 py-2">ID</th>
-                        <th className="border px-4 py-2">Bàn</th>
                         <th className="border px-4 py-2">Tổng tiền</th>
-                        <th className="border px-4 py-2">Trạng thái</th>
+                        <th className="border px-4 py-2 w-32">Trạng thái</th>
                         <th className="border px-4 py-2">Phương thức thanh toán</th>
                         <th className="border px-4 py-2">Ngày tạo</th>
                         <th className="border px-4 py-2">Ngày thanh toán</th>
@@ -167,7 +167,6 @@ const BillsPage = () => {
                     {bills.map((bill) => (
                         <tr key={bill.orderId}>
                             <td className="border px-4 py-2">{bill.orderId}</td>
-                            <td className="border px-4 py-2">{bill.table.tableNumber}</td>
                             <td className="border px-4 py-2 font-semibold">{formatCurrency(bill.totalPrice)}</td>
                             <td className="border px-4 py-2">
                                 <span className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${getStatusColor(bill.orderStatus)}`}>
@@ -230,10 +229,6 @@ const BillsPage = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                             <div>
-                                <p className="text-sm text-gray-600">Bàn:</p>
-                                <p className="font-medium">{selectedBill.table.tableNumber}</p>
-                            </div>
-                            <div>
                                 <p className="text-sm text-gray-600">Trạng thái:</p>
                                 <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(selectedBill.orderStatus)}`}>
                                     {getStatusDisplay(selectedBill.orderStatus)}
@@ -269,13 +264,13 @@ const BillsPage = () => {
                             </tr>
                             </thead>
                             <tbody>
-                            {billDetails.map((item, index) => (
-                                <tr key={item.order_item_id}>
+                            {selectedBill.items.map((item, index) => (
+                                <tr key={index}>
                                     <td className="border px-4 py-2">{index + 1}</td>
-                                    <td className="border px-4 py-2">{item.dish_name || `Món #${item.dish_id}`}</td>
+                                    <td className="border px-4 py-2">{item.dishName}</td>
                                     <td className="border px-4 py-2">{item.quantity}</td>
                                     <td className="border px-4 py-2">{formatCurrency(item.price)}</td>
-                                    <td className="border px-4 py-2">{formatCurrency(item.quantity * item.price)}</td>
+                                    <td className="border px-4 py-2">{formatCurrency(item.total)}</td>
                                 </tr>
                             ))}
                             </tbody>
