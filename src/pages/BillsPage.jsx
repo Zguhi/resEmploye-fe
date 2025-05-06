@@ -5,8 +5,6 @@ import BillsService from '../api/BillsService.js';
 const BillsPage = () => {
     const [bills, setBills] = useState([]);
     const [selectedBill, setSelectedBill] = useState(null);
-    const [page, setPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -14,34 +12,21 @@ const BillsPage = () => {
 
     useEffect(() => {
         fetchBills();
-    }, [page, startDate, endDate]);
+    }, []);
 
     // Lấy danh sách hóa đơn
     const fetchBills = async () => {
         try {
-            const response = await BillsService.getAll(page, 10, 'orderId', 'desc', 'Completed', startDate, endDate);
-            const data = response.data;
-
-            // Kiểm tra nếu data là một mảng và có phần tử đầu tiên
-            if (Array.isArray(data) && data.length > 0) {
-                // Lấy phần tử đầu tiên của mảng
-                const firstItem = data[0];
-
-                // Kiểm tra nếu phần tử đầu tiên có thuộc tính 'orderId'
-                if (Object.prototype.hasOwnProperty.call(firstItem, 'orderId')) {
-                    setBills(data);
-                } else {
-                    console.error('Dữ liệu trả về không có thuộc tính "orderId":', data);
-                    setBills([]);
-                }
+            const response = await BillsService.getAll();
+            if (Array.isArray(response.data)) {
+                setBills(response.data);
             } else {
-                console.error('Dữ liệu trả về không đúng định dạng mảng hoặc mảng rỗng:', data);
+                console.error('Dữ liệu trả về không phải là mảng:', response.data);
                 setBills([]);
             }
-
-            setTotalPages(data.length);
         } catch (error) {
             console.error('Lỗi khi lấy danh sách hóa đơn:', error);
+            setBills([]);
         }
     };
 
@@ -68,13 +53,22 @@ const BillsPage = () => {
 
     // Định dạng ngày tháng
     const formatDate = (dateString) => {
-        const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+        const options = {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
         return new Date(dateString).toLocaleDateString('vi-VN', options);
     };
 
     // Định dạng tiền
     const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
     };
 
     // Lấy trạng thái hiển thị
@@ -135,15 +129,21 @@ const BillsPage = () => {
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                             <p className="text-sm text-blue-700">Tổng doanh thu</p>
-                            <p className="text-2xl font-bold text-blue-800">{formatCurrency(revenueData.totalRevenue)}</p>
+                            <p className="text-2xl font-bold text-blue-800">
+                                {formatCurrency(revenueData.totalRevenue)}
+                            </p>
                         </div>
                         <div className="bg-green-50 p-4 rounded-lg border border-green-100">
                             <p className="text-sm text-green-700">Số hóa đơn</p>
-                            <p className="text-2xl font-bold text-green-800">{revenueData.totalBills}</p>
+                            <p className="text-2xl font-bold text-green-800">
+                                {revenueData.totalBills}
+                            </p>
                         </div>
                         <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
                             <p className="text-sm text-amber-700">Trung bình mỗi hóa đơn</p>
-                            <p className="text-2xl font-bold text-amber-800">{formatCurrency(revenueData.averageBill)}</p>
+                            <p className="text-2xl font-bold text-amber-800">
+                                {formatCurrency(revenueData.averageBill)}
+                            </p>
                         </div>
                     </div>
                 )}
@@ -156,6 +156,7 @@ const BillsPage = () => {
                     <tr className="bg-amber-50 text-left">
                         <th className="border px-4 py-2">ID</th>
                         <th className="border px-4 py-2">Tổng tiền</th>
+                        <th className="border px-4 py-2">Ghi chú</th>
                         <th className="border px-4 py-2 w-32">Trạng thái</th>
                         <th className="border px-4 py-2">Phương thức thanh toán</th>
                         <th className="border px-4 py-2">Ngày tạo</th>
@@ -167,24 +168,25 @@ const BillsPage = () => {
                     {bills.map((bill) => (
                         <tr key={bill.orderId}>
                             <td className="border px-4 py-2">{bill.orderId}</td>
-                            <td className="border px-4 py-2 font-semibold">{formatCurrency(bill.totalPrice)}</td>
+                            <td className="border px-4 py-2 font-semibold">
+                                {formatCurrency(bill.totalPrice)}
+                            </td>
+                            <td className="border px-4 py-2">{bill.note || '-'}</td>
                             <td className="border px-4 py-2">
-                                <span className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${getStatusColor(bill.orderStatus)}`}>
-                                    {getStatusDisplay(bill.orderStatus)}
-                                </span>
+                                    <span className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${getStatusColor(bill.orderStatus)}`}>
+                                        {getStatusDisplay(bill.orderStatus)}
+                                    </span>
                             </td>
                             <td className="border px-4 py-2">{bill.paymentMethod}</td>
                             <td className="border px-4 py-2">{formatDate(bill.createdAt)}</td>
                             <td className="border px-4 py-2">{formatDate(bill.paidAt)}</td>
                             <td className="border px-4 py-2">
-                                <div className="flex gap-2 flex-wrap">
-                                    <button
-                                        onClick={() => handleViewDetails(bill)}
-                                        className="bg-amber-500 text-white px-2 py-1 rounded hover:bg-amber-600"
-                                    >
-                                        Chi tiết
-                                    </button>
-                                </div>
+                                <button
+                                    onClick={() => handleViewDetails(bill)}
+                                    className="bg-amber-500 text-white px-2 py-1 rounded hover:bg-amber-600"
+                                >
+                                    Chi tiết
+                                </button>
                             </td>
                         </tr>
                     ))}
@@ -192,33 +194,14 @@ const BillsPage = () => {
                 </table>
             </div>
 
-            {/* Phân trang */}
-            <div className="flex justify-center mt-4 gap-2">
-                <button
-                    onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
-                    disabled={page === 0}
-                    className="bg-gray-300 px-3 py-1 rounded disabled:opacity-50"
-                >
-                    Trước
-                </button>
-                <span className="px-3 py-1">
-                  {page + 1} / {totalPages}
-                </span>
-                <button
-                    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages - 1))}
-                    disabled={page + 1 >= totalPages}
-                    className="bg-gray-300 px-3 py-1 rounded disabled:opacity-50"
-                >
-                    Sau
-                </button>
-            </div>
-
             {/* Modal Chi tiết hóa đơn */}
             {isModalOpen && selectedBill && (
                 <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
                     <div className="bg-white p-6 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-semibold text-amber-700">Chi tiết hóa đơn #{selectedBill.orderId}</h3>
+                            <h3 className="text-xl font-semibold text-amber-700">
+                                Chi tiết hóa đơn #{selectedBill.orderId}
+                            </h3>
                             <button
                                 onClick={() => setIsModalOpen(false)}
                                 className="text-gray-500 hover:text-gray-700"
@@ -248,7 +231,7 @@ const BillsPage = () => {
                             </div>
                             <div>
                                 <p className="text-sm text-gray-600">Ghi chú:</p>
-                                <p className="font-medium">{selectedBill.note}</p>
+                                <p className="font-medium">{selectedBill.note || '-'}</p>
                             </div>
                         </div>
 
@@ -269,8 +252,12 @@ const BillsPage = () => {
                                     <td className="border px-4 py-2">{index + 1}</td>
                                     <td className="border px-4 py-2">{item.dishName}</td>
                                     <td className="border px-4 py-2">{item.quantity}</td>
-                                    <td className="border px-4 py-2">{formatCurrency(item.price)}</td>
-                                    <td className="border px-4 py-2">{formatCurrency(item.total)}</td>
+                                    <td className="border px-4 py-2">
+                                        {formatCurrency(item.price)}
+                                    </td>
+                                    <td className="border px-4 py-2">
+                                        {formatCurrency(item.total)}
+                                    </td>
                                 </tr>
                             ))}
                             </tbody>

@@ -1,166 +1,233 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../layouts/layout.jsx';
-import { getCurrentUser } from '../api/auth.js';
 import ReservationService from '../api/ReservationService.js';
 import BillsService from '../api/BillsService.js';
 
 const HomePage = () => {
-    const [user, setUser] = useState(null);
-    const [reservationsToday, setReservationsToday] = useState(0);
-    const [pendingReservations, setPendingReservations] = useState(0);
-    const [todayRevenue, setTodayRevenue] = useState(0);
+    const [todayStats, setTodayStats] = useState({
+        reservations: 0,
+        pendingReservations: 0,
+        revenue: 0,
+        totalOrders: 0
+    });
     const [recentReservations, setRecentReservations] = useState([]);
-    const [todayOrders, setTodayOrders] = useState(0);
-    const [processingOrders, setProcessingOrders] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        const userInfo = getCurrentUser();
-        setUser(userInfo);
-
-        fetchTodayReservations();
-        fetchTodayRevenue();
-        fetchRecentReservations();
-        fetchTodayOrders();
+        fetchDashboardData();
     }, []);
 
-    const fetchTodayReservations = async () => {
+    const fetchDashboardData = async () => {
         try {
-            const response = await ReservationService.getAll();
+            setLoading(true);
             const today = new Date().toISOString().split('T')[0];
 
-            const todayReservations = response.data.filter(res =>
+            // Lấy dữ liệu đặt bàn
+            const reservationsResponse = await ReservationService.getAll();
+            if (!reservationsResponse.data) {
+                throw new Error('Không thể lấy dữ liệu đặt bàn');
+            }
+
+            const allReservations = reservationsResponse.data;
+
+            // Lọc đặt bàn cho ngày hôm nay
+            const todayReservations = allReservations.filter(res =>
                 new Date(res.startTime).toISOString().split('T')[0] === today
             );
 
-            const pendingReservations = todayReservations.filter(res => res.status === 'Pending');
+            // Lọc đặt bàn đang chờ xử lý
+            const pendingReservations = allReservations.filter(res =>
+                res.status === 'Pending'
+            );
 
-            setReservationsToday(todayReservations.length);
-            setPendingReservations(pendingReservations.length);
-        } catch (error) {
-            console.error('Lỗi khi lấy danh sách đặt bàn:', error);
-        }
-    };
+            // Lấy danh sách đơn hàng (bills)
+            const ordersResponse = await BillsService.getAll();
+            if (!ordersResponse.data) {
+                throw new Error('Không thể lấy dữ liệu đơn hàng');
+            }
 
-    const fetchTodayRevenue = async () => {
-        try {
-            const today = new Date().toISOString().split('T')[0];
-            const response = await BillsService.getRevenue(today, today);
-            setTodayRevenue(response.data.data.totalRevenue || 0);
-        } catch (error) {
-            console.error('Lỗi khi lấy doanh thu:', error);
-        }
-    };
+            const allOrders = ordersResponse.data;
 
-    const fetchRecentReservations = async () => {
-        try {
-            const response = await ReservationService.getAll();
-            const sortedReservations = response.data
+            // Tính tổng doanh thu của các đơn hàng hoàn thành hôm nay
+            const todayOrders = allOrders.filter(order => {
+                const orderDate = new Date(order.createdAt).toISOString().split('T')[0];
+                return orderDate === today && order.orderStatus === 'Completed';
+            });
+
+            const todayRevenue = todayOrders.reduce((sum, order) => sum + order.totalPrice, 0);
+
+            // Cập nhật state với tất cả dữ liệu
+            setTodayStats({
+                reservations: todayReservations.length,
+                pendingReservations: pendingReservations.length,
+                revenue: todayRevenue,
+                totalOrders: todayOrders.length
+            });
+
+            // Lấy 5 đặt bàn gần nhất và sắp xếp theo thời gian
+            const sortedReservations = [...allReservations]
                 .sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
-                .slice(0, 3);
+                .slice(0, 5);
+
             setRecentReservations(sortedReservations);
-        } catch (error) {
-            console.error('Lỗi khi lấy đặt bàn mới nhất:', error);
-        }
-    };
+            setError(null);
 
-    const fetchTodayOrders = async () => {
-        try {
-            const response = await BillsService.getAll();
-            const today = new Date().toISOString().split('T')[0];
-
-            const todayOrders = response.data.filter(order =>
-                new Date(order.created_at).toISOString().split('T')[0] === today
-            );
-
-            const processingOrders = todayOrders.filter(order =>
-                ['Pending', 'Preparing', 'Delivering'].includes(order.order_status)
-            );
-
-            setTodayOrders(todayOrders.length);
-            setProcessingOrders(processingOrders.length);
-        } catch (error) {
-            console.error('Lỗi khi lấy danh sách đơn hàng:', error);
+        } catch (err) {
+            console.error('Lỗi khi lấy dữ liệu dashboard:', err);
+            setError('Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.');
+        } finally {
+            setLoading(false);
         }
     };
 
     const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
     };
 
     const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleString('vi-VN', {
+        const options = {
             hour: '2-digit',
             minute: '2-digit',
             day: '2-digit',
-            month: '2-digit'
-        });
+            month: '2-digit',
+            year: 'numeric'
+        };
+        return new Date(dateString).toLocaleString('vi-VN', options);
     };
+
+    const getStatusDisplay = (status) => {
+        switch (status) {
+            case 'Confirmed':
+                return 'Đã xác nhận';
+            case 'Pending':
+                return 'Chờ xác nhận';
+            case 'Cancelled':
+                return 'Đã hủy';
+            default:
+                return status;
+        }
+    };
+
+    const getStatusClass = (status) => {
+        switch (status) {
+            case 'Confirmed':
+                return 'bg-green-100 text-green-800';
+            case 'Pending':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'Cancelled':
+                return 'bg-red-100 text-red-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    if (loading) {
+        return (
+            <Layout>
+                <div className="flex items-center justify-center min-h-screen">
+                    <p className="text-gray-600">Đang tải dữ liệu...</p>
+                </div>
+            </Layout>
+        );
+    }
 
     return (
         <Layout>
             <div className="bg-white p-6 rounded-lg shadow-md">
-                <h1 className="text-2xl font-bold text-amber-700 mb-4">Chào mừng đến với Quản lý Gericht Restaurant</h1>
+                <h1 className="text-2xl font-bold text-amber-700 mb-4">
+                    Tổng quan Gericht Restaurant
+                </h1>
+
+                {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                        <p>{error}</p>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+                    {/* Số lượng đặt bàn */}
                     <div className="bg-amber-50 p-6 rounded-lg shadow-sm border border-amber-100">
                         <h2 className="text-lg font-bold text-amber-800 mb-3">Đặt bàn hôm nay</h2>
-                        <p className="text-amber-700 text-2xl font-bold">{reservationsToday}</p>
-                        <p className="text-gray-600 text-sm mt-1">{pendingReservations} chờ xác nhận</p>
+                        <p className="text-amber-700 text-2xl font-bold">
+                            {todayStats.reservations}
+                        </p>
+                        <p className="text-gray-600 text-sm mt-1">
+                            {todayStats.pendingReservations} chờ xác nhận
+                        </p>
                     </div>
 
+                    {/* Doanh thu */}
                     <div className="bg-green-50 p-6 rounded-lg shadow-sm border border-green-100">
                         <h2 className="text-lg font-bold text-green-800 mb-3">Doanh thu hôm nay</h2>
-                        <p className="text-green-700 text-2xl font-bold">{formatCurrency(todayRevenue)}</p>
-                        <p className="text-gray-600 text-sm mt-1">So với hôm qua</p>
+                        <p className="text-green-700 text-2xl font-bold">
+                            {formatCurrency(todayStats.revenue)}
+                        </p>
                     </div>
 
+                    {/* Tổng đơn hàng */}
                     <div className="bg-blue-50 p-6 rounded-lg shadow-sm border border-blue-100">
-                        <h2 className="text-lg font-bold text-blue-800 mb-3">Tổng đơn hàng</h2>
-                        <p className="text-blue-700 text-2xl font-bold">{todayOrders}</p>
-                        <p className="text-gray-600 text-sm mt-1">{processingOrders} đang xử lý</p>
+                        <h2 className="text-lg font-bold text-blue-800 mb-3">Tổng đơn hàng hôm nay</h2>
+                        <p className="text-blue-700 text-2xl font-bold">
+                            {todayStats.totalOrders}
+                        </p>
                     </div>
                 </div>
 
+                {/* Đặt bàn gần đây */}
                 <div className="mt-8">
                     <h2 className="text-xl font-bold text-gray-800 mb-4">Đặt bàn mới nhất</h2>
                     <div className="overflow-x-auto">
-                        <table className="min-w-full bg-white">
-                            <thead className="bg-gray-100">
+                        <table className="min-w-full bg-white border rounded-lg">
+                            <thead className="bg-gray-50">
                             <tr>
-                                <th className="py-2 px-4 text-left">Khách hàng</th>
-                                <th className="py-2 px-4 text-left">Số điện thoại</th>
-                                <th className="py-2 px-4 text-left">Thời gian</th>
-                                <th className="py-2 px-4 text-left">Số người</th>
-                                <th className="py-2 px-4 text-left">Trạng thái</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Khách hàng
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Số điện thoại
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Thời gian
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Số người
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Trạng thái
+                                </th>
                             </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                            {recentReservations.length > 0 ? (
-                                recentReservations.map((reservation) => (
-                                    <tr key={reservation.id || reservation.reservationId}>
-                                        <td className="py-2 px-4">{reservation.guestName || reservation.customerName}</td>
-                                        <td className="py-2 px-4">{reservation.guestPhone}</td>
-                                        <td className="py-2 px-4">{formatDate(reservation.startTime)}</td>
-                                        <td className="py-2 px-4">{reservation.numberOfGuests}</td>
-                                        <td className="py-2 px-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs ${
-                                                reservation.status === 'Confirmed'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : reservation.status === 'Pending'
-                                                        ? 'bg-yellow-100 text-yellow-800'
-                                                        : 'bg-red-100 text-red-800'
-                                            }`}>
-                                                {reservation.status === 'Confirmed'
-                                                    ? 'Đã xác nhận'
-                                                    : reservation.status === 'Pending'
-                                                        ? 'Chờ xác nhận'
-                                                        : 'Đã hủy'}
+                            {recentReservations.map((reservation) => (
+                                <tr key={reservation.id || reservation.reservationId}>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {reservation.guestName || reservation.customerName}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {reservation.guestPhone}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {formatDate(reservation.startTime)}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {reservation.numberOfGuests || reservation.numberOfPeople}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-2 py-1 rounded-full text-xs ${getStatusClass(reservation.status)}`}>
+                                                {getStatusDisplay(reservation.status)}
                                             </span>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
+                                    </td>
+                                </tr>
+                            ))}
+                            {recentReservations.length === 0 && (
                                 <tr>
-                                    <td colSpan="5" className="text-center py-4">Không có đặt bàn mới</td>
+                                    <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                                        Không có đặt bàn mới
+                                    </td>
                                 </tr>
                             )}
                             </tbody>

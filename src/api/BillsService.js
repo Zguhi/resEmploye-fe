@@ -1,7 +1,7 @@
 import axios from 'axios';
 import {API_BASE_URL} from "./axiosConfig.js";
 
-const API_URL = `${API_BASE_URL}/api/orders`;
+const API_URL = `${API_BASE_URL}/api/orders/bills`;
 
 // Hàm lấy token từ localStorage
 // const getAuthToken = () => {
@@ -47,27 +47,7 @@ const getBillDetails = (orderId) => {
     });
 };
 
-// Thêm hóa đơn mới
-const add = (billData) => {
-    //const token = getAuthToken();
 
-    const processedBillData = {
-        userId: billData.userId,
-        tableId: billData.tableId,
-        items: billData.items.map(item => ({
-            dishId: item.dishId,
-            quantity: item.quantity
-        }))
-    };
-
-    return axios.post(API_URL, processedBillData, {
-        withCredentials: true,
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
-    });
-};
 
 // Cập nhật hóa đơn
 const update = (billData) => {
@@ -135,7 +115,6 @@ export default {
     getAll,
     getById,
     getBillDetails,
-    add,
     update,
     delete: deleteBill,
     updateStatus,
